@@ -9,6 +9,7 @@ import strauss
 import wavio as wav
 from scipy.special import erf
 from scipy.io import wavfile
+import time
 
 # other useful modules
 import matplotlib.pyplot as plt
@@ -17,9 +18,10 @@ import astropy.io.fits as pyfits
 import glob
 
 # which channel do we want to use (1,2,3 or 4)?
-ch = 3
+ch = 1
 
-contrast = 0.55
+acontrast = 2.3
+vcontrast = 1
 
 # specify audio system (e.g. mono, stereo, 5.1, ...)
 system = "mono"
@@ -28,7 +30,7 @@ length = 1.1
 # set uo score object for sonification
 score =  Score(["C3"], length)
 generator = Spectralizer()
-generator.modify_preset({'min_freq':150, 'max_freq':800})
+generator.modify_preset({'min_freq':200, 'max_freq':1800})
 
 def get_continuum(wavelengths, spectrum, deg=12):
     # we fit the continuum of the spectrum as 
@@ -55,40 +57,67 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-for f in glob.glob(f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'):
-    data, header = pyfits.getdata(f, header=True)
-    print(data.shape)
+#fname = f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'
+# fname = f'DataCubes/J1316+1753_240222.fits'
+fname = f'DataCubes/Level3_ch1-long_s3d.fits'
 
-    data = dsamp_ifu(data,1)[:]
+for f in glob.glob(fname):
+
+    t0 = time.time()
+    data, header = pyfits.getdata(f, header=True)
+
+    data[np.isnan(data)] = 0.
+    # # data = data[2100:2230]
+    # data = data[700:900]
+    data = data[620:800]
+    #data = data[300:900]
+    print(data.shape)
+    
+
+    # data = dsamp_ifu(data,2)
     
     maxpos = np.unravel_index(np.argmax(data.sum(0)), data.shape[1:])
-    print(maxpos)
-    r_cen = maxpos[::-1]
-    wlens = np.linspace(header['CRVAL3'], (data.shape[0]-1)*header['CDELT3']+header['CRVAL3'], data.shape[0])
-    ap = 9
-    censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
 
-    plt.imshow(censel.sum(0)**contrast)
-    vols = censel.sum(0)**contrast
+    
+    r_cen = maxpos[::-1]
+    r_cen = (data.shape[1]//2, data.shape[2]//2)
+    print(r_cen)
+    wlens = np.linspace(header['CRVAL3'], (data.shape[0]-1)*header['CDELT3']+header['CRVAL3'], data.shape[0])
+    #wlens = np.linspace(1000,5000,data.shape[0])
+    ap = 18
+    censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
+    censel = data[:, 3:-3, :]
+    print(censel.shape)
+    plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 98))**vcontrast)
+    vols = np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 98))**vcontrast
     vols[np.isnan(vols)] = 0
     vols /= vols.max()
     print(vols)
     plt.show()
-
     nsamp = int(48000 * 0.1 // 1)
     fade = np.linspace(0.,1.,nsamp)
-    
+
+    t1 = time.time()
+
+    print(f"setup {t1-t0:.2f} s")
     
     pixcol = []
+    plt.figure(figsize=(16,16))
+
+    spec = np.zeros((wlens.size, censel.shape[1]*censel.shape[2]))
+    
     for i in range(censel.shape[1]):
         for j in range(censel.shape[2]):
             plt.subplot2grid((ap*2,ap*2), (i,j))
             # plt.plot(wlens,censel[:,i,j])
             plt.axis('off')
-            cont_avg = get_continuum(wlens, censel[:,i,j], 5)
-            consub = censel[:,i,j]-cont_avg
-            consub[consub < consub.max()/35] = 0.
-            pars = {'spectrum':[consub[::-1]], 'pitch':[1]}
+            cont_avg = get_continuum(wlens, censel[:,i,j], 2)
+            consub = censel[:,i,j]-np.percentile(censel[:,i,j], 50)
+            consub[consub < consub.max()*0.1] = 0.#0.15
+            # consub[consub < 0] = 0.
+            pars = {'spectrum':[consub[::-1]**acontrast], 'pitch':[1]}
+            spec[:, i*censel.shape[1]+j] = consub[::-1]
+            plt.plot()
             sources = Objects(pars.keys())
             sources.fromdict(pars)
             sources.apply_mapping_functions()
@@ -100,17 +129,22 @@ for f in glob.glob(f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'):
             wave = wav.read(f'static/audio/snd_{i}_{j}.wav')
 
             cwave = np.array(wave.data[:-nsamp], dtype='float64')[:,0]
-            print(cwave.shape)
             cwave[:nsamp] *= fade
             cwave[:nsamp] += np.array(wave.data[-nsamp:], dtype='float64')[:,0] * fade[::-1]
             # plt.plot(cwave[:nsamp])
             # plt.plot(cwave[::-1][:nsamp])
             # plt.show()
-            print(cwave.max())
             mx = 2**31 -1
             wavfile.write(f'static/audio/snd_{i}_{j}.wav', 48000, cwave.astype('int32'))
             # plt.semilogy()
+    t2 = time.time()
+    print(f"setup {t2-t1:.2f} s")
+
+    intspec = spec.sum(axis=-1)
+    
     np.savetxt('static/pixcols.csv', (np.row_stack(pixcol)*255).astype(int), delimiter=',', fmt='%d')
+    np.savetxt('static/wlens.csv', wlens, delimiter=',', fmt='%e')
+    np.savetxt('static/spec.csv', np.row_stack([wlens,(spec.T/spec.max())**acontrast]), delimiter=',', fmt='%e')
     plt.show()    
     
     plt.title(f'Average Spectrum for Channel {ch} Data Cube')
