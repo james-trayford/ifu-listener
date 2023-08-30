@@ -34,7 +34,7 @@ and render the grid:
 
 `python3 render_soundgrid.py`
 
-Curently, most of the processing nd parameters are hard coded - but there are many things we can change here which will strongly affect how the spectrum sounds (e.g. continuum subtraction, frequency mapping range, _'contrast'_, etc.)
+Curently, most of the processing and parameters are hard-coded, but there are many things we can change here which will strongly affect how the spectrum sounds (e.g. continuum subtraction, frequency mapping range, _'contrast'_, etc.)
 
 ## Serving Locally
 
