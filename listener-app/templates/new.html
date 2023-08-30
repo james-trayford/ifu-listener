@@ -4,14 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grid of Audio Files</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
    </head>
   <body>
-    <h1> IFU listener :: Powered by STRAUSS </h1>
+    <h1> IFU listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss">STRAUSS</a></h1>
     <button class="setup-context"> Setup Audio Engine </button>
     <p></p>
     <canvas id='mycanvas'></canvas>
+    <div style="width: 30%; margin: 0 auto;">
+      <canvas id="myChart"></canvas>
+    </div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
   </body>
 </html>

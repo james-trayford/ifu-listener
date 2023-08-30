@@ -18,10 +18,10 @@ import astropy.io.fits as pyfits
 import glob
 
 # which channel do we want to use (1,2,3 or 4)?
-ch = 1
+ch = 2
 
-acontrast = 2.3
-vcontrast = 1
+acontrast = 1.*1.4
+vcontrast = 0.5
 
 # specify audio system (e.g. mono, stereo, 5.1, ...)
 system = "mono"
@@ -30,7 +30,7 @@ length = 1.1
 # set uo score object for sonification
 score =  Score(["C3"], length)
 generator = Spectralizer()
-generator.modify_preset({'min_freq':200, 'max_freq':1800})
+generator.modify_preset({'min_freq':40, 'max_freq':800})
 
 def get_continuum(wavelengths, spectrum, deg=12):
     # we fit the continuum of the spectrum as 
@@ -58,7 +58,7 @@ def dsamp_ifu(a, dsamp):
     return host.reshape(sh).mean(-2).mean(1).T
 
 #fname = f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'
-# fname = f'DataCubes/J1316+1753_240222.fits'
+#fname = f'DataCubes/J1316+1753_240222.fits'
 fname = f'DataCubes/Level3_ch1-long_s3d.fits'
 
 for f in glob.glob(fname):
@@ -67,13 +67,20 @@ for f in glob.glob(fname):
     data, header = pyfits.getdata(f, header=True)
 
     data[np.isnan(data)] = 0.
+    wlens = np.linspace(header['CRVAL3'], (header['NAXIS3']-1)*header['CDELT3']+header['CRVAL3'], header['NAXIS3'])
     # # data = data[2100:2230]
     # data = data[700:900]
-    data = data[620:800]
-    #data = data[300:900]
-    print(data.shape)
-    
 
+    lidx = 750
+    ridx = 785
+
+    data = data[lidx:ridx]
+    wlens = wlens[lidx:ridx]
+    #data = data[300:900]
+
+    print(data.shape, header['CDELT3'], header['CRVAL3'])
+    plt.plot(data.sum(axis=-1).sum(axis=-1))
+    plt.show()    
     # data = dsamp_ifu(data,2)
     
     maxpos = np.unravel_index(np.argmax(data.sum(0)), data.shape[1:])
@@ -82,14 +89,16 @@ for f in glob.glob(fname):
     r_cen = maxpos[::-1]
     r_cen = (data.shape[1]//2, data.shape[2]//2)
     print(r_cen)
-    wlens = np.linspace(header['CRVAL3'], (data.shape[0]-1)*header['CDELT3']+header['CRVAL3'], data.shape[0])
+
     #wlens = np.linspace(1000,5000,data.shape[0])
-    ap = 18
+    ap = 17
     censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
     censel = data[:, 3:-3, :]
-    print(censel.shape)
-    plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 98))**vcontrast)
-    vols = np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 98))**vcontrast
+    print(censel)
+    censel = np.rot90(censel, k =3, axes=(1,2))
+    print(censel)
+    plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast)
+    vols = np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast
     vols[np.isnan(vols)] = 0
     vols /= vols.max()
     print(vols)
@@ -108,26 +117,32 @@ for f in glob.glob(fname):
     
     for i in range(censel.shape[1]):
         for j in range(censel.shape[2]):
-            plt.subplot2grid((ap*2,ap*2), (i,j))
+            # plt.subplot2grid((ap*2,ap*2), (i,j))
             # plt.plot(wlens,censel[:,i,j])
             plt.axis('off')
             cont_avg = get_continuum(wlens, censel[:,i,j], 2)
             consub = censel[:,i,j]-np.percentile(censel[:,i,j], 50)
-            consub[consub < consub.max()*0.1] = 0.#0.15
+            consub[consub < consub.max()*0.18] = 0.#0.15
             # consub[consub < 0] = 0.
             pars = {'spectrum':[consub[::-1]**acontrast], 'pitch':[1]}
-            spec[:, i*censel.shape[1]+j] = consub[::-1]
+            # pars = {'spectrum':[(consub[::-1] == consub[::-1].max()).astype(float)], 'pitch':[1]}
+            spec[:, i*censel.shape[1]+j] = pars['spectrum'][0][::-1]
             plt.plot()
             sources = Objects(pars.keys())
             sources.fromdict(pars)
             sources.apply_mapping_functions()
             soni = Sonification(score, sources, generator, system)
             soni.render()
-            soni.save(f'static/audio/snd_{i}_{j}.wav', master_volume=vols[i,j])
+            print(vols[i,j])
+            soni.save(f'static/audio/snd_{i}_{j}.wav', master_volume=vols[i,j]**1.3)
             pixcol.append(plt.cm.magma(vols[i,j])[:-1])
             plt.plot(wlens, consub)
             wave = wav.read(f'static/audio/snd_{i}_{j}.wav')
-
+            if i ==150 and j == 150:
+                plt.close()
+                print(list(pars['spectrum'][0]))
+                plt.plot(pars['spectrum'][0])
+                plt.show()
             cwave = np.array(wave.data[:-nsamp], dtype='float64')[:,0]
             cwave[:nsamp] *= fade
             cwave[:nsamp] += np.array(wave.data[-nsamp:], dtype='float64')[:,0] * fade[::-1]
@@ -144,7 +159,7 @@ for f in glob.glob(fname):
     
     np.savetxt('static/pixcols.csv', (np.row_stack(pixcol)*255).astype(int), delimiter=',', fmt='%d')
     np.savetxt('static/wlens.csv', wlens, delimiter=',', fmt='%e')
-    np.savetxt('static/spec.csv', np.row_stack([wlens,(spec.T/spec.max())**acontrast]), delimiter=',', fmt='%e')
+    np.savetxt('static/spec.csv', np.row_stack([wlens,(spec.T/spec.max())]), delimiter=',', fmt='%e')
     plt.show()    
     
     plt.title(f'Average Spectrum for Channel {ch} Data Cube')

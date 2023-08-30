@@ -12,7 +12,9 @@ var ctx = canvas.getContext('2d');
 var panelsize = 16;
 var npanel = 33;
 var fadetime = 0.03;
-var maxvol = 0.5
+var prefadetime = 0.03;
+var maxvol = 0.9;
+var minvol = 0.;
 
 canvas.width  = panelsize * npanel;
 canvas.height = panelsize * npanel;
@@ -100,12 +102,18 @@ function routeAudio() {
     var inc = 0
     var sources = [];
     var gains = [];
+
+    // filter output
+    filter = audioContext.createBiquadFilter();
+    filter.connect(audioContext.destination);
+    filter.type = 'lowpass';
+    filter.frequency.value = 22000;
     for (var i = 0; i < npanel; i++) {
 	for (var j = 0; j < npanel; j++) {
 	    gainNode = audioContext.createGain();
 	    gains.push(gainNode);
-	    gains[inc].connect(audioContext.destination);
-	    gains[inc].gain.value = 0.;
+	    gains[inc].connect(filter); //audioContext.destination
+	    gains[inc].gain.value = minvol;
 
 	    sourceNode = audioContext.createBufferSource();
 	    sourceNode.buffer = audioBuffers[inc];
@@ -123,22 +131,25 @@ function playSound(e) {
     updateCurdx(e);
     isMouseDown = true;
     idx = curdx;
-    gainNodes[idx].gain.linearRampToValueAtTime(maxvol, audioContext.currentTime + fadetime);
+    //gainNodes[idx].gain.linearRampToValueAtTime(maxvol, audioContext.currentTime + fadetime);
+    gainNodes[idx].gain.setTargetAtTime(maxvol, audioContext.currentTime + prefadetime, fadetime);
     
 }
 
 function updateCurdx(e) {
+    //console.log('Update...');
     var canvasRect = canvas.getBoundingClientRect();
     xidx = Math.floor((e.clientX - canvasRect.left) / panelsize);
-    yidx = Math.floor((e.clientY - canvasRect.top) / panelsize);
+    yidx = Math.floor((canvasRect.bottom - e.clientY) / panelsize);
     curdx = xidx + npanel * yidx;
     specChart.data.datasets[0].data = specVals[curdx];
-    specChart.update('none');
+    specChart.update();
 };
 
 function stopSound(e) {
     if (isMouseDown){
-	gainNodes[idx].gain.linearRampToValueAtTime(0., audioContext.currentTime + fadetime);
+	//gainNodes[idx].gain.linearRampToValueaAtTime(minvol, audioContext.currentTime + fadetime);
+	gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
 	// gainNodes[idx].gain.value = 0.;
 	isMouseDown = false;
     }
@@ -155,8 +166,10 @@ function stopSound(e) {
 // }
 
 function switchSound(e) {
-    gainNodes[idx].gain.linearRampToValueAtTime(0., audioContext.currentTime + fadetime);
-    gainNodes[curdx].gain.linearRampToValueAtTime(maxvol, audioContext.currentTime + fadetime);
+    //gainNodes[idx].gain.linearRampToValueAtTime(minvol, audioContext.currentTime + fadetime);
+    gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
+    //gainNodes[curdx].gain.linearRampToValueAtTime(maxvol, audioContext.currentTime + fadetime);
+    gainNodes[curdx].gain.setTargetAtTime(maxvol, audioContext.currentTime + prefadetime, fadetime);
     // gainNodes[idx].gain.value = 0.;
     // gainNodes[curdx].gain.value = 1.;
 }
@@ -166,7 +179,7 @@ function updateSound(e) {
       updateCurdx(e);
       if (idx != curdx) {
 	  switchSound(e);
-	  idx = curdx
+	  idx = curdx;
       }
   }
 }
@@ -175,13 +188,12 @@ function makeGrid(){
     // ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 20%, 20%)';
     console.log(pixCols);
     inc = 0;
-    for (var x = 0, i = 0; i < npanel; x+=panelsize, i++) {
+    for (var x = npanel*panelsize, i = npanel-1; i >= 0; x-=panelsize, i--) {
 	for (var y = 0, j = 0; j < npanel; y+=panelsize, j++) {	  
 	    [rv,gv,bv] = pixCols[inc];
 	    ctx.fillStyle = `rgb(${rv}, ${gv}, ${bv})`;
 	    w = Math.floor(panelsize);
 	    ctx.fillRect (y, x, w, w);
-	    
 
 	    inc++;
 	}
@@ -204,49 +216,6 @@ mycanvas.addEventListener('mouseleave', stopSound);
 mycanvas.addEventListener('mousemove', updateSound);
 
 var chartcanvas = document.getElementById('myChart');
-// var cdata = {
-//   labels: ["January", "February", "March", "April", "May", "June", "July"],
-//   datasets: [{
-//       label: "My First dataset",
-//       data: [0,0.1,0.2,0.3,0.4,0.5,0.6],
-//       fill: false,
-//       lineTension: 0.1,
-//       backgroundColor: "rgba(75,192,192,0.4)",
-//       borderColor: "rgba(75,192,192,1)",
-//       borderCapStyle: 'butt',
-//       borderDash: [],
-//       borderDashOffset: 0.0,
-//       borderJoinStyle: 'miter',
-//       pointBorderColor: "rgba(75,192,192,1)",
-//       pointBackgroundColor: "#fff",
-//       pointBorderWidth: 1,
-//       pointHoverRadius: 5,
-//       pointHoverBackgroundColor: "rgba(75,192,192,1)",
-//       pointHoverBorderColor: "rgba(220,220,220,1)",
-//       pointHoverBorderWidth: 2,
-//       pointRadius: 5,
-//       pointHitRadius: 10,
-//       tension: 1,
-//       pointStyle: true,
-//       animation: 'off',
-//       data: pixCols,
-//   }]
-// };
-
-// const fs = require('fs');
-
-// fs.readFile('static/wlens.csv', 'utf8', (frerr, wldat) => {
-//   if (frerr) {
-//     console.error("Error reading the file:", frerr);
-//     return;
-//   }
-
-//   const lines = wldat.trim().split('\n');
-//   const numbersArray = lines.map(line => parseFloat(line));
-
-//   console.log(numbersArray);
-// });
-
 
 // Initialize Chart.js
 function initializeChart(wlensArray) {
@@ -270,57 +239,28 @@ function initializeChart(wlensArray) {
 	    showXLabels: 1,
 	    tension: 0.3,
 	    animation: {
-		duration: 1000,
+		duration: 60,
             },
 	    scales: {
 		y: {
+		    title: {
+			display: true,
+			text: "Peak-normalised Flux Density"
+		    },
 		    max: 1.,
 		    min: 0,
+		},
+		x: {
+		    title: {
+			display: true,
+			text: "Wavelength (micron)"
+		    },
 		}
 	    }
         }
     });
 }
 
-// var cdata = {
-//     labels : [ 6.5, 6.55, 6.6, 6.65, 6.7, 6.75, 6.8 ],
-//     datasets : 
-// 	[{
-// 	    data : [ 0, 0, 0, 0, 0, 0, 0 ],
-// 	    label : "Spectral Energy Distribution",
-// 	    borderColor : "#00000f",
-// 	    fill : false,
-// 	    pointStyle: false,
-// 	    tension: 0.3
-// 	}],
-//     showXLabels: false
-// };
-
-// function adddata() {
-//   myLineChart.data.datasets.data = specWlens;
-//   myLineChart.data.labels = specWlens;
-//   myLineChart.update();
-// }
-
-// var option = {
-//     showLines: false,
-//     showXLabels: 3,
-// };
-
-// var myLineChart = new Chart(chartcanvas, {
-//     type: 'line',
-//     data: cdata,
-//     options: {
-// 	showLines: true,
-// 	scales: {
-//             xAxes: [{
-// 		ticks: {
-//                     maxTicksLimit: 3
-// 		}
-//             }]
-// 	}
-//     }
-// });
 
 loadSpectra('static/spec.csv')
     .then(spec => {
