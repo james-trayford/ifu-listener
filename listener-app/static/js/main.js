@@ -140,7 +140,7 @@ function updateCurdx(e) {
     //console.log('Update...');
     var canvasRect = canvas.getBoundingClientRect();
     xidx = Math.floor((e.clientX - canvasRect.left) / panelsize);
-    yidx = Math.floor((canvasRect.bottom - e.clientY) / panelsize);
+    yidx = Math.ceil((canvasRect.bottom - e.clientY) / panelsize);
     curdx = xidx + npanel * yidx;
     specChart.data.datasets[0].data = specVals[curdx];
     specChart.update();
