@@ -5,16 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grid of Audio Files</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript">
+      var nside = parseInt({{ metadata.nside }})
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
    </head>
   <body>
-    <h1> IFU listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss">STRAUSS</a></h1>
+    <audio id="in-sound">
+      <source src="{{ url_for('static', filename='stock_sounds/in.mp3') }}">
+    </audio>
+    <audio id="out-sound">
+      <source src="{{ url_for('static', filename='stock_sounds/out.mp3') }}">
+    </audio>
+    <audio id="oob-sound">
+      <source src="{{ url_for('static', filename='stock_sounds/oob.mp3') }}">
+    </audio>
+
+    <h1> Hyperspectral listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss">STRAUSS</a></h1>
     <button class="setup-context"> Setup Audio Engine </button>
     <p></p>
     <canvas id='mycanvas'></canvas>
-    <div style="width: 30%; margin: 0 auto;">
+    <p></p>
+    <button class="helper-switch"> Turn Off Helper Sounds </button>
+    <div style="width: 33%; margin: 0 auto;">
       <canvas id="myChart"></canvas>
     </div>
+    <button class="switch-axis"> Use Log Y Scale </button>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   </body>
 </html>

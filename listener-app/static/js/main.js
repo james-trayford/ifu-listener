@@ -10,7 +10,7 @@ var canvas = document.getElementById('mycanvas');
 var ctx = canvas.getContext('2d');
 
 var panelsize = 16;
-var npanel = 33;
+var npanel =  nside;
 var fadetime = 0.03;
 var prefadetime = 0.03;
 var maxvol = 0.9;
@@ -27,8 +27,14 @@ var curdx = -1;
 var idx = 0;
 
 var isMouseDown = false;
+var isYAxisLog = false;
+var isContextSetUp = false;
+var useHelperSounds = false;
 
 const setupContextButton = document.querySelector(".setup-context")
+const switchYAxisButton = document.querySelector(".switch-axis")
+const switchHelperButton = document.querySelector(".helper-switch")
+const oobNotification = document.getElementById("oob-sound")
 
 // ---------- load spectra files -----------------
 
@@ -69,14 +75,51 @@ function loadWhiteLight(filePath, callback) {
 }
 
 setupContextButton.addEventListener("click", () => {
-    audioContext = new AudioContext();
-    console.log("User Gestured to start Audio Context.");
-    getSoundGrid().then((response) => {
-	audioBuffers = response;
-	[sourceNodes, gainNodes] = routeAudio();
-    });
-    console.log("Setup Done.");
+    if (!isContextSetUp) {
+	useHelperSounds = true;
+	audioContext = new AudioContext();
+	console.log("User Gestured to start Audio Context.");
+	getSoundGrid().then((response) => {
+	    audioBuffers = response;
+	    [sourceNodes, gainNodes] = routeAudio();
+	});
+	console.log("Setup Done.");
+    }
+    isContextSetUp = true;
 });
+
+switchYAxisButton.addEventListener("click", () => {
+    if (isYAxisLog){
+	specChart.options.scales.y.type = 'linear';
+	isYAxisLog = false;
+	switchYAxisButton.innerHTML = 'Use Log Y Scale';
+	console.log("Y-axis --> Linear scale.");
+    }
+    else {
+	specChart.options.scales.y.type = 'logarithmic';
+	isYAxisLog = true;
+	switchYAxisButton.innerHTML = 'Use Linear Y Scale';
+	console.log("Y-axis --> Log scale.");
+    }
+    specChart.update();
+
+});
+
+switchHelperButton.addEventListener("click", () => {
+    if (useHelperSounds){
+	useHelperSounds = false;
+	switchHelperButton.innerHTML = 'Turn On Helper Sounds';
+	console.log("Helper Sounds Off.");
+    }
+    else {
+	useHelperSounds = true;
+	switchHelperButton.innerHTML = 'Turn Off Helper Sounds';
+	console.log("Helper Sounds On.");
+    }
+    specChart.update();
+
+});
+
 
 async function getBuffer(row, col) {
     const filepath = `static/audio/snd_${row}_${col}.wav`;
@@ -87,7 +130,7 @@ async function getBuffer(row, col) {
 }
 
 async function getSoundGrid() {
-    console.log("Setting Up Audio Grid.")
+    console.log("Setting Up Audio Grid.");
     buffers = [];
     for (var i = 0; i < npanel; i++) {
 	for (var j = 0; j < npanel; j++) {
@@ -107,7 +150,7 @@ function routeAudio() {
     filter = audioContext.createBiquadFilter();
     filter.connect(audioContext.destination);
     filter.type = 'lowpass';
-    filter.frequency.value = 22000;
+    filter.frequency.value = 4000;
     for (var i = 0; i < npanel; i++) {
 	for (var j = 0; j < npanel; j++) {
 	    gainNode = audioContext.createGain();
@@ -146,32 +189,35 @@ function updateCurdx(e) {
     specChart.update();
 };
 
-function stopSound(e) {
+function stopSoundUp(e) {
     if (isMouseDown){
-	//gainNodes[idx].gain.linearRampToValueaAtTime(minvol, audioContext.currentTime + fadetime);
 	gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
-	// gainNodes[idx].gain.value = 0.;
 	isMouseDown = false;
     }
 };
 
-// function updateVolume(x, y) {
-//   var canvasRect = canvas.getBoundingClientRect();
-//   var cenX = canvasRect.left + panelsize*0.5 + (idx%npanel)*panelsize;
-//   var cenY = canvasRect.top + panelsize*0.5 + (Math.floor(idx/npanel))*panelsize;
-//   var relX = (x - cenX)/panelsize;
-//   var relY = (y - cenY)/panelsize;
-//   volume = Math.min(Math.max(1-relX,0)*Math.max(1-relY,0),1);
-//   gainNodes[idx].gain.value = volume;
-// }
+function stopSoundLeave(e) {
+    if (isMouseDown){
+	gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
+	isMouseDown = false;
+    }
+    if (useHelperSounds){
+	document.getElementById("out-sound").play();
+    }
+    // this can be annoying... disabling for now
+    //oobNotification.play();
+};
+
+function enterCanvas(e) {
+    if (useHelperSounds) {
+	document.getElementById("in-sound").play();
+	oobNotification.pause();
+    }
+}
 
 function switchSound(e) {
-    //gainNodes[idx].gain.linearRampToValueAtTime(minvol, audioContext.currentTime + fadetime);
     gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
-    //gainNodes[curdx].gain.linearRampToValueAtTime(maxvol, audioContext.currentTime + fadetime);
     gainNodes[curdx].gain.setTargetAtTime(maxvol, audioContext.currentTime + prefadetime, fadetime);
-    // gainNodes[idx].gain.value = 0.;
-    // gainNodes[curdx].gain.value = 1.;
 }
 
 function updateSound(e) {
@@ -186,7 +232,6 @@ function updateSound(e) {
 
 function makeGrid(){
     // ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 20%, 20%)';
-    console.log(pixCols);
     inc = 0;
     for (var x = npanel*panelsize, i = npanel-1; i >= 0; x-=panelsize, i--) {
 	for (var y = 0, j = 0; j < npanel; y+=panelsize, j++) {	  
@@ -211,9 +256,15 @@ loadWhiteLight('static/pixcols.csv', (error, dataArray) => {
 
 const mycanvas = document.getElementById('mycanvas');
 mycanvas.addEventListener('mousedown', playSound);
-mycanvas.addEventListener('mouseup', stopSound);
-mycanvas.addEventListener('mouseleave', stopSound);
+mycanvas.addEventListener('mouseup', stopSoundUp);
+mycanvas.addEventListener('mouseleave', stopSoundLeave);
 mycanvas.addEventListener('mousemove', updateSound);
+mycanvas.addEventListener('mouseenter', enterCanvas);
+
+oobNotification.addEventListener('ended', function() {
+    this.currentTime = 0;
+    this.play();
+}, false);
 
 var chartcanvas = document.getElementById('myChart');
 
@@ -245,15 +296,15 @@ function initializeChart(wlensArray) {
 		y: {
 		    title: {
 			display: true,
-			text: "Peak-normalised Flux Density"
+			text: "Peak-normalised Flux"
 		    },
-		    max: 1.,
-		    min: 0,
+		    max: 1,
+		    min: 3e-3,
 		},
 		x: {
 		    title: {
 			display: true,
-			text: "Wavelength (micron)"
+			text: "Wavelength [micron]"
 		    },
 		}
 	    }
@@ -262,13 +313,15 @@ function initializeChart(wlensArray) {
 }
 
 
+// function switchYAxisScale():
+
+
 loadSpectra('static/spec.csv')
     .then(spec => {
 	specWlens = spec.shift();
 	specVals = spec;
 	initializeChart(specWlens);
-	console.log(specWlens);
-	console.log("complete");
+	console.log("Spectra Loaded.");
   })
   .catch(error => {
     console.error('Error reading the file:', error);

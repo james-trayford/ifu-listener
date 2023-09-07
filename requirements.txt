@@ -1,5 +1,6 @@
 Flask
 strauss @ git+https://github.com/james-trayford/strauss.git@spectraliser
 matplotlib
+gunicorn
 numpy
 astropy

@@ -79,8 +79,8 @@ for f in glob.glob(fname):
     #data = data[300:900]
 
     print(data.shape, header['CDELT3'], header['CRVAL3'])
-    plt.plot(data.sum(axis=-1).sum(axis=-1))
-    plt.show()    
+    # plt.plot(data.sum(axis=-1).sum(axis=-1))
+    # plt.show()    
     # data = dsamp_ifu(data,2)
     
     maxpos = np.unravel_index(np.argmax(data.sum(0)), data.shape[1:])
@@ -97,12 +97,12 @@ for f in glob.glob(fname):
     print(censel)
     censel = np.rot90(censel, k =3, axes=(1,2))
     print(censel)
-    plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast)
+    # plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast)
     vols = np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast
     vols[np.isnan(vols)] = 0
     vols /= vols.max()
     print(vols)
-    plt.show()
+    # plt.show()
     nsamp = int(48000 * 0.1 // 1)
     fade = np.linspace(0.,1.,nsamp)
 
@@ -119,7 +119,7 @@ for f in glob.glob(fname):
         for j in range(censel.shape[2]):
             # plt.subplot2grid((ap*2,ap*2), (i,j))
             # plt.plot(wlens,censel[:,i,j])
-            plt.axis('off')
+            # plt.axis('off')
             cont_avg = get_continuum(wlens, censel[:,i,j], 2)
             consub = censel[:,i,j]-np.percentile(censel[:,i,j], 50)
             consub[consub < consub.max()*0.18] = 0.#0.15
@@ -127,7 +127,6 @@ for f in glob.glob(fname):
             pars = {'spectrum':[consub[::-1]**acontrast], 'pitch':[1]}
             # pars = {'spectrum':[(consub[::-1] == consub[::-1].max()).astype(float)], 'pitch':[1]}
             spec[:, i*censel.shape[1]+j] = pars['spectrum'][0][::-1]
-            plt.plot()
             sources = Objects(pars.keys())
             sources.fromdict(pars)
             sources.apply_mapping_functions()
@@ -136,7 +135,7 @@ for f in glob.glob(fname):
             print(vols[i,j])
             soni.save(f'static/audio/snd_{i}_{j}.wav', master_volume=vols[i,j]**1.3)
             pixcol.append(plt.cm.magma(vols[i,j])[:-1])
-            plt.plot(wlens, consub)
+            # plt.plot(wlens, consub)
             wave = wav.read(f'static/audio/snd_{i}_{j}.wav')
             if i ==150 and j == 150:
                 plt.close()
@@ -156,14 +155,16 @@ for f in glob.glob(fname):
     print(f"setup {t2-t1:.2f} s")
 
     intspec = spec.sum(axis=-1)
+
+    outspec = np.clip((spec.T/spec.max()), 1e-3, 1)
+    # outspec = np.log10(np.clip(outspec)
     
     np.savetxt('static/pixcols.csv', (np.row_stack(pixcol)*255).astype(int), delimiter=',', fmt='%d')
     np.savetxt('static/wlens.csv', wlens, delimiter=',', fmt='%e')
-    np.savetxt('static/spec.csv', np.row_stack([wlens,(spec.T/spec.max())]), delimiter=',', fmt='%e')
-    plt.show()    
+    np.savetxt('static/spec.csv', np.row_stack([wlens,outspec]), delimiter=',', fmt='%e')
+    # plt.show()    
     
-    plt.title(f'Average Spectrum for Channel {ch} Data Cube')
-    plt.plot(wlens,data.mean(-1).mean(-1))
+    # plt.title(f'Average Spectrum for Channel {ch} Data Cube')
+    # plt.plot(wlens,data.mean(-1).mean(-1))
 
     plt.xlabel(header['CUNIT3'])
-    plt.show()
