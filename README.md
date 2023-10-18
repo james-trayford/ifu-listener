@@ -41,7 +41,7 @@ Curently, most of the processing and parameters are hard-coded, but there are ma
 This works in the browser, so make sure you are in the virtual environment setup above, e.g.
 
 ```
-source mi-env/bin/activate 
+source ifu-venv/bin/activate 
 ```
 
 Now, set up the server, for example on port `8080`

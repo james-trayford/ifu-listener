@@ -36,6 +36,13 @@ const switchYAxisButton = document.querySelector(".switch-axis")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
 
+// ---------- toggle between light and dark modes ----------------
+
+function toggleMode() {
+  var element = document.body;
+  element.classList.toggle("dark-mode");
+}
+
 // ---------- load spectra files -----------------
 
 function loadSpectra(filePath) {
@@ -119,7 +126,6 @@ switchHelperButton.addEventListener("click", () => {
     specChart.update();
 
 });
-
 
 async function getBuffer(row, col) {
     const filepath = `static/audio/snd_${row}_${col}.wav`;
@@ -272,6 +278,7 @@ var chartcanvas = document.getElementById('myChart');
 function initializeChart(wlensArray) {
     const ctx = document.getElementById('myChart').getContext('2d');
     const initArray = new Array(wlensArray.length).fill(0);
+    Chart.defaults.color = '#808B96';
     specChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -279,8 +286,8 @@ function initializeChart(wlensArray) {
             datasets: [{
                 label: 'Spectral Dimension',
                 data: initArray,
-                borderColor: "#00000f",
-                borderWidth: 1,
+                borderColor: "#808B96",
+                borderWidth: 3,
 		pointStyle: false,
                 fill: false
             }]
@@ -288,24 +295,60 @@ function initializeChart(wlensArray) {
         options: {
 	    showLines: false,
 	    showXLabels: 1,
+            plugins: {
+              legend: {
+	        labels: {
+	           font: {
+	               size: 16,
+	               weight: "bold"
+	               	           }
+	        }
+	      }
+	    },
 	    tension: 0.3,
 	    animation: {
 		duration: 60,
             },
 	    scales: {
-		y: {
+ 		y: {
+                  grid: {
+                      color: 'rgb(128,139,150,0.2)'
+                  },
+                  ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold"
+                         }
+                    },
 		    title: {
 			display: true,
-			text: "Peak-normalised Flux"
-		    },
+			text: "Peak-normalised Flux",
+                        font: {
+                            size: 18,
+	                    weight: "bold"
+                        }
+ 		    },
 		    max: 1,
 		    min: 3e-3,
 		},
 		x: {
+                  grid: {
+                      color: 'rgb(128,139,150,0.2)',
+                  },
+                    ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold"
+                         }
+                    },
 		    title: {
 			display: true,
-			text: "Wavelength [micron]"
-		    },
+			text: "Wavelength [micron]",
+                        font: {
+                            size: 18,
+	                    weight: "bold"
+                        }
+		    }
 		}
 	    }
         }
