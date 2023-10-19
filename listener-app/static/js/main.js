@@ -28,20 +28,15 @@ var idx = 0;
 
 var isMouseDown = false;
 var isYAxisLog = false;
+var isDarkMode = false;
 var isContextSetUp = false;
 var useHelperSounds = false;
 
 const setupContextButton = document.querySelector(".setup-context")
 const switchYAxisButton = document.querySelector(".switch-axis")
+const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
-
-// ---------- toggle between light and dark modes ----------------
-
-function toggleMode() {
-  var element = document.body;
-  element.classList.toggle("dark-mode");
-}
 
 // ---------- load spectra files -----------------
 
@@ -109,6 +104,24 @@ switchYAxisButton.addEventListener("click", () => {
 	console.log("Y-axis --> Log scale.");
     }
     specChart.update();
+
+});
+
+switchDarkModeButton.addEventListener("click", () => {
+    if (isDarkMode){
+        var element = document.body;
+        element.classList.toggle("dark-mode");
+	isDarkMode = false;
+	switchDarkModeButton.innerHTML = 'Use Dark Mode';
+	console.log("Light Mode.");
+    }
+    else {
+        var element = document.body;
+        element.classList.toggle("dark-mode");
+	isDarkMode = true;
+	switchDarkModeButton.innerHTML = 'Use Light Mode';
+	console.log("Dark Mode.");
+    }
 
 });
 
@@ -278,7 +291,7 @@ var chartcanvas = document.getElementById('myChart');
 function initializeChart(wlensArray) {
     const ctx = document.getElementById('myChart').getContext('2d');
     const initArray = new Array(wlensArray.length).fill(0);
-    Chart.defaults.color = '#808B96';
+    Chart.defaults.color = 'rgb(128,139,150)';
     specChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -286,7 +299,7 @@ function initializeChart(wlensArray) {
             datasets: [{
                 label: 'Spectral Dimension',
                 data: initArray,
-                borderColor: "#808B96",
+                borderColor: "rgb(128,139,150)",
                 borderWidth: 3,
 		pointStyle: false,
                 fill: false
@@ -312,7 +325,7 @@ function initializeChart(wlensArray) {
 	    scales: {
  		y: {
                   grid: {
-                      color: 'rgb(128,139,150,0.2)'
+                      color: 'rgb(128,139,150,0.2)',
                   },
                   ticks: {
                         font: {
