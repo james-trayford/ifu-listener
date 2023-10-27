@@ -32,6 +32,15 @@ var isDarkMode = false;
 var isContextSetUp = false;
 var useHelperSounds = false;
 
+// some colours
+var dmline = "rgb(255,255,0)"
+var dmgrid = "rgb(255,255,255,0.25)"
+var dmfont = "rgb(255,255,255,0.7)"
+var lmline = "rgb(0,0,0)"
+var lmgrid = "rgb(0,0,0,0.25)"
+var lmfont = "rgb(0,0,0,0.7)"
+var midgry = "rgb(115,115,115)"
+
 const setupContextButton = document.querySelector(".setup-context")
 const switchYAxisButton = document.querySelector(".switch-axis")
 const switchDarkModeButton = document.querySelector(".dark-mode")
@@ -113,6 +122,14 @@ switchDarkModeButton.addEventListener("click", () => {
         element.classList.toggle("dark-mode");
 	isDarkMode = false;
 	switchDarkModeButton.innerHTML = 'Use Dark Mode';
+	
+	// change set colours
+	specChart.data.datasets[0].borderColor = lmline;
+	specChart.options.scales.y.grid.color = lmgrid;
+	specChart.options.scales.x.grid.color = lmgrid;
+	specChart.options.scales.y.ticks.color = lmfont;
+	specChart.options.scales.x.ticks.color = lmfont;
+	
 	console.log("Light Mode.");
     }
     else {
@@ -120,8 +137,19 @@ switchDarkModeButton.addEventListener("click", () => {
         element.classList.toggle("dark-mode");
 	isDarkMode = true;
 	switchDarkModeButton.innerHTML = 'Use Light Mode';
+
+	// change set colours
+	specChart.options.scaleFontColor = dmfont;
+	specChart.data.datasets[0].borderColor = dmline;
+	specChart.options.scales.y.grid.color = dmgrid;
+	specChart.options.scales.x.grid.color = dmgrid;
+	specChart.options.scales.y.ticks.color = dmfont;
+	specChart.options.scales.x.ticks.color = dmfont;
+
 	console.log("Dark Mode.");
     }
+    // update chart
+    specChart.update();
 
 });
 
@@ -291,7 +319,7 @@ var chartcanvas = document.getElementById('myChart');
 function initializeChart(wlensArray) {
     const ctx = document.getElementById('myChart').getContext('2d');
     const initArray = new Array(wlensArray.length).fill(0);
-    Chart.defaults.color = 'rgb(128,139,150)';
+    Chart.defaults.color = midgry;
     specChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -299,7 +327,7 @@ function initializeChart(wlensArray) {
             datasets: [{
                 label: 'Spectral Dimension',
                 data: initArray,
-                borderColor: "rgb(128,139,150)",
+                borderColor: midgry,
                 borderWidth: 3,
 		pointStyle: false,
                 fill: false
@@ -325,7 +353,7 @@ function initializeChart(wlensArray) {
 	    scales: {
  		y: {
                   grid: {
-                      color: 'rgb(128,139,150,0.2)',
+                      color: lmgrid,
                   },
                   ticks: {
                         font: {
@@ -346,7 +374,7 @@ function initializeChart(wlensArray) {
 		},
 		x: {
                   grid: {
-                      color: 'rgb(128,139,150,0.2)',
+                      color: lmgrid,
                   },
                     ticks: {
                         font: {
