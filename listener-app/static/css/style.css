@@ -74,6 +74,15 @@ button {
   margin-bottom: 10px;
 }
 
+#datacubebutton {
+  font-family: 'Quicksand', sans-serif;
+  font-size: 25px;
+  font-weight: bold;
+  text-decoration: none;
+  grid-area: sidebar;
+  margin-bottom: 10px;
+}
+
 #mycanvas {
   grid-area: main;
   display:inline-block;

@@ -42,11 +42,18 @@ var lmfont = "rgb(0,0,0,0.7)"
 var midgry = "rgb(115,115,115)"
 
 const setupContextButton = document.querySelector(".setup-context")
+//const fileChosen = document.getElementById('.file-chosen');
 const switchYAxisButton = document.querySelector(".switch-axis")
 const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
 
+//function openAttachment() {
+//  document.getElementById('datacubefile').click();
+//}
+//function fileSelected(input){
+//  document.getElementById('datacubebutton').value = "File: " + input.files[0].name
+//}
 // ---------- load spectra files -----------------
 
 function loadSpectra(filePath) {
@@ -98,6 +105,14 @@ setupContextButton.addEventListener("click", () => {
     }
     isContextSetUp = true;
 });
+
+//fileChosen.addEventListener('change', function(){
+//  fileChosen.textContent = this.files[0].name
+//});
+
+//function fileSelected(input){
+//  document.getElementById('datacubebutton').value = "File: " + input.files[0].name
+//}
 
 switchYAxisButton.addEventListener("click", () => {
     if (isYAxisLog){

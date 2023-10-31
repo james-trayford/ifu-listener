@@ -25,6 +25,8 @@
       <div class="grid">
       <h1> Hyperspectral listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss" target="_blank">STRAUSS</a></h1>
         <div class="sidebar">
+          <input type="file" class="file" id="datacubefile" style="display: none;" onchange="fileSelected(this)"/>
+          <input type="button" class="file" id="datacubebutton" onclick="openAttachment()" value="Choose File"/> <br />
           <button class="setup-context"> Setup Audio Engine</button> <br />
           <p><br /></p>
           <p>
@@ -37,7 +39,7 @@
             <canvas id="myChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
           </div>
         </div>
-        <div class="sidebar">
+        <div class="main">
             <canvas id='mycanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
             </canvas>
           </div>
