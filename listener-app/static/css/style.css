@@ -18,7 +18,7 @@ body.dark-mode p {
 body.dark-mode a {
   color: #ffe657;
 }
-body.input[type='file'] {
+body.dark-mode input[type='file'] {
   color: #f5f5f5;
 }
 
@@ -69,15 +69,6 @@ h1 {
 }
 
 button {
-  font-family: 'Quicksand', sans-serif;
-  font-size: 25px;
-  font-weight: bold;
-  text-decoration: none;
-  grid-area: sidebar;
-  margin-bottom: 10px;
-}
-
-#datacubebutton {
   font-family: 'Quicksand', sans-serif;
   font-size: 25px;
   font-weight: bold;

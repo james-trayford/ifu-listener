@@ -8,6 +8,7 @@
     <script type="text/javascript">
       var nside = parseInt({{ metadata.nside }})
     </script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
    </head>
   <body>
@@ -31,9 +32,10 @@
               {{ form.hidden_tag() }}
               {{ form.file }}
               <br />
-              <button type="submit" value="Submit">Submit</button>
+              <button type="submit" value="Submit" onclick="$('#loading').show();"
+>Submit</button>
           </form>
-
+          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
           <button class="setup-context"> Setup Audio Engine</button> <br />
           <button class="helper-switch"> Turn Off Helper Sounds </button> <br />
           <button class="dark-mode">Use Dark Mode</button> <br />

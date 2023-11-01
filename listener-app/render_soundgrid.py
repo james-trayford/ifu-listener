@@ -72,11 +72,14 @@ def make_grid(fname):
         # # data = data[2100:2230]
         # data = data[700:900]
 
-        lidx = 750
-        ridx = 785
+	#------
+        #lidx = 750
+        #ridx = 785
 
-        data = data[lidx:ridx]
-        wlens = wlens[lidx:ridx]
+        #data = data[lidx:ridx]
+        #wlens = wlens[lidx:ridx]
+        #------
+        
         #data = data[300:900]
 
         print(data.shape, header['CDELT3'], header['CRVAL3'])
