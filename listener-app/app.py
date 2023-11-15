@@ -34,17 +34,6 @@ def select_datacube():
 
     return render_template('select_datacube.html', form=form, metadata=metadata)
 
-#    if request.method == 'POST':
-#        filename = request.form['filename']
-#        fname = os.path.join(upload_folder, filename)
-#        make_grid(fname)
-#        nspaxel = sum(1 for _ in open('static/pixcols.csv'))
-#        nside = math.isqrt(nspaxel)
-#        metadata = {'nside': nside}
-#        return redirect(url_for('select_datacube', metadata=metadata))
-#    else:
-#        return render_template('select_datacube.html', metadata=metadata)
-       
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
     

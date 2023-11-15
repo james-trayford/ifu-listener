@@ -33,22 +33,30 @@
               {{ form.file }}
               <br />
               <button type="submit" value="Submit" onclick="$('#loading').show();"
->Submit</button>
+>Generate Audio Files</button> 
           </form>
           <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
+          <button class="collapsible"> Set Parameters</button>
+          <div class="params">
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+          </div>
+          <br />
           <button class="setup-context"> Setup Audio Engine</button> <br />
           <button class="helper-switch"> Turn Off Helper Sounds </button> <br />
           <button class="dark-mode">Use Dark Mode</button> <br />
           <button class="switch-axis"> Use Log Y Scale </button>
           </p>
-          <p></p>          <div style="width: 100%; margin: 0 auto;">
-            <canvas id="myChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
-          </div>
         </div>
-        <div class="sidebar">
+        <div class="main">
             <canvas id='mycanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
             </canvas>
-          </div>
+        </div>
+        <div class="right">
+            <div style="width: 100%; margin: 0 auto;">
+            <canvas id="integratedChart" aria-label="Line chart showing integrated spectrum for datacube: peak-normalised flux as a function of wavelength." role="img"></canvas>
+            <br />
+            <canvas id="myChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
+            </div>
         </div>
       </div>
     </div>

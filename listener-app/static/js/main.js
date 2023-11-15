@@ -26,6 +26,22 @@ var w = 0;
 var curdx = -1;
 var idx = 0;
 
+// -------- collapsible block (for Set Parameters) --------
+
+var coll = document.getElementsByClassName("collapsible");
+var i;
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+} 
+
 var isMouseDown = false;
 var isYAxisLog = false;
 var isDarkMode = false;
@@ -46,6 +62,23 @@ const switchYAxisButton = document.querySelector(".switch-axis")
 const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
+
+
+// ---------- load integrated spectrum -----------------
+
+function loadSpectrum(filePath) {
+  return new Promise((resolve, reject) => {
+    fetch(filePath)
+      .then(response => response.text())
+      .then(data => {
+          const lines = data.trim().split("\n");
+	  const numbersArray = lines.map(line => line.split(',').map(parseFloat));
+	  resolve(numbersArray);
+      })
+      .catch(error => reject(error));
+  });
+}
+
 
 // ---------- load spectra files -----------------
 
@@ -313,6 +346,90 @@ oobNotification.addEventListener('ended', function() {
     this.play();
 }, false);
 
+
+// Initialize integrated spectrum Chart.js
+
+var chartcanvas = document.getElementById('integratedChart');
+function intChart(intspec) {
+    const ctx = document.getElementById('integratedChart').getContext('2d');
+//    const initArray = new Array(wlensArray.length).fill(0);
+    Chart.defaults.color = midgry;
+    intspecChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: intspec, // Create labels based on array indices
+            datasets: [{
+                label: 'Integrated Spectrum',
+                data: intspec,
+                borderColor: midgry,
+                borderWidth: 3,
+		pointStyle: false,
+                fill: false
+            }]
+        },
+        options: {
+	    showLines: false,
+	    showXLabels: 1,
+            plugins: {
+              legend: {
+	        labels: {
+	           font: {
+	               size: 16,
+	               weight: "bold"
+	               	           }
+	        }
+	      }
+	    },
+	    tension: 0.3,
+	    animation: {
+		duration: 60,
+            },
+	    scales: {
+ 		y: {
+                  grid: {
+                      color: lmgrid,
+                  },
+                  ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold"
+                         }
+                    },
+		    title: {
+			display: true,
+			text: "Peak-normalised Flux",
+                        font: {
+                            size: 18,
+	                    weight: "bold"
+                        }
+ 		    },
+		    max: 1,
+		    min: 3e-3,
+		},
+		x: {
+                  grid: {
+                      color: lmgrid,
+                  },
+                    ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold"
+                         }
+                    },
+		    title: {
+			display: true,
+			text: "Wavelength [micron]",
+                        font: {
+                            size: 18,
+	                    weight: "bold"
+                        }
+		    }
+		}
+	    }
+        }
+    });
+}
+
 var chartcanvas = document.getElementById('myChart');
 
 // Initialize Chart.js
@@ -399,6 +516,18 @@ function initializeChart(wlensArray) {
 
 // function switchYAxisScale():
 
+// Load integrated spectrum
+
+loadSpectrum('static/intspec.csv')
+    .then(intspec => {
+	intChart(intspec);
+	console.log("Spectrum Loaded.");
+    })
+    .catch(error => {
+      console.error('Error reading the file:', error);
+    });
+  
+// Load spectra:
 
 loadSpectra('static/spec.csv')
     .then(spec => {
