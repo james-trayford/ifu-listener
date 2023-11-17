@@ -159,6 +159,7 @@ def make_grid(fname):
         print(f"setup {t2-t1:.2f} s")
 
         intspec = spec.sum(axis=-1)
+        intspec = np.clip((spec.T/spec.max()), 1e-3, 1)
         #intspec = spec[:, :ydim, :xdim].sum(axis=0)
 
         outspec = np.clip((spec.T/spec.max()), 1e-3, 1)
@@ -167,7 +168,7 @@ def make_grid(fname):
         np.savetxt('static/pixcols.csv', (np.row_stack(pixcol)*255).astype(int), delimiter=',', fmt='%d')
         np.savetxt('static/wlens.csv', wlens, delimiter=',', fmt='%e')
         np.savetxt('static/spec.csv', np.row_stack([wlens,outspec]), delimiter=',', fmt='%e')
-        np.savetxt('static/intspec.csv', intspec, delimiter=',', fmt='%e')
+        np.savetxt('static/intspec.csv', np.row_stack([wlens,intspec]), delimiter=',', fmt='%e')
         # plt.show()    
     
         # plt.title(f'Average Spectrum for Channel {ch} Data Cube')

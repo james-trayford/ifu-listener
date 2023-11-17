@@ -6,6 +6,9 @@ let pixCols;
 let specWlens;
 let specVals;
 let specChart;
+let intspecWlens;
+let intspecVals;
+let intspecChart;
 var canvas = document.getElementById('mycanvas');
 var ctx = canvas.getContext('2d');
 
@@ -135,17 +138,20 @@ setupContextButton.addEventListener("click", () => {
 switchYAxisButton.addEventListener("click", () => {
     if (isYAxisLog){
 	specChart.options.scales.y.type = 'linear';
+	intspecChart.options.scales.y.type = 'linear';
 	isYAxisLog = false;
 	switchYAxisButton.innerHTML = 'Use Log Y Scale';
 	console.log("Y-axis --> Linear scale.");
     }
     else {
 	specChart.options.scales.y.type = 'logarithmic';
+	intspecChart.options.scales.y.type = 'logarithmic';
 	isYAxisLog = true;
 	switchYAxisButton.innerHTML = 'Use Linear Y Scale';
 	console.log("Y-axis --> Log scale.");
     }
     specChart.update();
+    intspecChart.update();
 
 });
 
@@ -162,6 +168,11 @@ switchDarkModeButton.addEventListener("click", () => {
 	specChart.options.scales.x.grid.color = lmgrid;
 	specChart.options.scales.y.ticks.color = lmfont;
 	specChart.options.scales.x.ticks.color = lmfont;
+	intspecChart.data.datasets[0].borderColor = lmline;
+	intspecChart.options.scales.y.grid.color = lmgrid;
+	intspecChart.options.scales.x.grid.color = lmgrid;
+	intspecChart.options.scales.y.ticks.color = lmfont;
+	intspecChart.options.scales.x.ticks.color = lmfont;
 	
 	console.log("Light Mode.");
     }
@@ -178,11 +189,18 @@ switchDarkModeButton.addEventListener("click", () => {
 	specChart.options.scales.x.grid.color = dmgrid;
 	specChart.options.scales.y.ticks.color = dmfont;
 	specChart.options.scales.x.ticks.color = dmfont;
+	intspecChart.options.scaleFontColor = dmfont;
+	intspecChart.data.datasets[0].borderColor = dmline;
+	intspecChart.options.scales.y.grid.color = dmgrid;
+	intspecChart.options.scales.x.grid.color = dmgrid;
+	intspecChart.options.scales.y.ticks.color = dmfont;
+	intspecChart.options.scales.x.ticks.color = dmfont;
 
 	console.log("Dark Mode.");
     }
     // update chart
     specChart.update();
+    intspecChart.update();
 
 });
 
@@ -350,17 +368,17 @@ oobNotification.addEventListener('ended', function() {
 // Initialize integrated spectrum Chart.js
 
 var chartcanvas = document.getElementById('integratedChart');
-function intChart(intspec) {
+function intChart(intspecWlens, intspecVals) {
     const ctx = document.getElementById('integratedChart').getContext('2d');
 //    const initArray = new Array(wlensArray.length).fill(0);
     Chart.defaults.color = midgry;
     intspecChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: intspec, // Create labels based on array indices
+            labels: intspecWlens, // Create labels based on array indices
             datasets: [{
                 label: 'Integrated Spectrum',
-                data: intspec,
+                data: intspecVals,
                 borderColor: midgry,
                 borderWidth: 3,
 		pointStyle: false,
@@ -399,12 +417,12 @@ function intChart(intspec) {
 			display: true,
 			text: "Peak-normalised Flux",
                         font: {
-                            size: 18,
+                            size: 16,
 	                    weight: "bold"
                         }
  		    },
-		    max: 1,
-		    min: 3e-3,
+//		    max: 1.01,
+//		    min: 3e-3,
 		},
 		x: {
                   grid: {
@@ -420,7 +438,7 @@ function intChart(intspec) {
 			display: true,
 			text: "Wavelength [micron]",
                         font: {
-                            size: 18,
+                            size: 16,
 	                    weight: "bold"
                         }
 		    }
@@ -482,11 +500,11 @@ function initializeChart(wlensArray) {
 			display: true,
 			text: "Peak-normalised Flux",
                         font: {
-                            size: 18,
+                            size: 16,
 	                    weight: "bold"
                         }
  		    },
-		    max: 1,
+		    max: 1.01,
 		    min: 3e-3,
 		},
 		x: {
@@ -503,7 +521,7 @@ function initializeChart(wlensArray) {
 			display: true,
 			text: "Wavelength [micron]",
                         font: {
-                            size: 18,
+                            size: 16,
 	                    weight: "bold"
                         }
 		    }
@@ -520,7 +538,9 @@ function initializeChart(wlensArray) {
 
 loadSpectrum('static/intspec.csv')
     .then(intspec => {
-	intChart(intspec);
+	intspecWlens = intspec.shift();
+	intspecVals = intspec[1];
+	intChart(intspecWlens, intspecVals);
 	console.log("Spectrum Loaded.");
     })
     .catch(error => {
