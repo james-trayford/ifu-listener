@@ -28,23 +28,29 @@
       
         <div class="sidebar">
           <p>
-          <form method="post" enctype="multipart/form-data">
-              {{ form.hidden_tag() }}
-              {{ form.file }}
-              <br />
-              <button type="submit" value="Submit" onclick="$('#loading').show();"
->Generate Audio Files</button> 
-          </form>
-          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
-          <button class="collapsible"> Set Parameters</button>
-          <div class="params">
-              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-          </div>
-          <br />
-          <button class="setup-context"> Setup Audio Engine</button> <br />
+          <button class="setup-context"> Setup Audio Engine</button> <br /><br />
           <button class="helper-switch"> Turn Off Helper Sounds </button> <br />
           <button class="dark-mode">Use Dark Mode</button> <br />
-          <button class="switch-axis"> Use Log Y Scale </button>
+          <button class="switch-axis"> Use Log Y Scale </button> <br />
+          
+          <button  class="show-new" onclick="toggle_display()">Select New</button>
+          <div class="generate" style="display:none">
+            <form method="post" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                {{ form.file }}
+                <br />
+                {{ form.minwl.label }}
+                {{ form.minwl }}
+                <br />
+                {{ form.maxwl.label }}
+                {{ form.maxwl }}
+                <br /><br />
+                <button type="submit" value="Submit" onclick="$('#loading').show();"
+>Generate Audio Files</button> 
+                <br />
+            </form>
+          </div>
+          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
           </p>
         </div>
         <div class="main">

@@ -50,6 +50,7 @@ var isYAxisLog = false;
 var isDarkMode = false;
 var isContextSetUp = false;
 var useHelperSounds = false;
+var showNewFile = false;
 
 // some colours
 var dmline = "rgb(255,255,0)"
@@ -62,6 +63,7 @@ var midgry = "rgb(115,115,115)"
 
 const setupContextButton = document.querySelector(".setup-context")
 const switchYAxisButton = document.querySelector(".switch-axis")
+const switchShowNewButton = document.querySelector(".show-new")
 const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
@@ -99,6 +101,18 @@ function loadSpectra(filePath) {
   });
 }
 
+
+// ---------- toggle select new section -----------------
+
+function toggle_display(){
+  el = document.querySelector('.generate');
+  
+  if(el.style.display == 'none'){
+      el.style.display = 'block'
+  }else{
+     el.style.display = 'none'
+  }
+}
 
 //----------- load whitelight data -------------------
 

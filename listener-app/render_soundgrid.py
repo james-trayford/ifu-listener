@@ -58,7 +58,7 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-def make_grid(fname):
+def make_grid(fname, minwl=None, maxwl=None):
 
     if not glob.glob(fname):
         print('No such file!')
@@ -82,6 +82,20 @@ def make_grid(fname):
         
         #data = data[300:900]
 
+        ## Allow selected range in wavelength
+                
+        lidx = np.argmin(wlens)
+        ridx = np.argmax(wlens)
+        if minwl is not None:
+            if minwl > np.min(wlens) and minwl < np.max(wlens):
+                lidx = np.where(wlens>=minwl)[0][0]
+        if maxwl is not None:
+            if maxwl < np.max(wlens) and maxwl > np.min(wlens):
+                ridx = np.where(wlens>=maxwl)[0][0]
+                
+        data = data[lidx:ridx]
+        wlens = wlens[lidx:ridx]
+        
         print(data.shape, header['CDELT3'], header['CRVAL3'])
         # plt.plot(data.sum(axis=-1).sum(axis=-1))
         # plt.show()    
