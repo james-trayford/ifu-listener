@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, flash
 from flask_wtf import FlaskForm
 from wtforms import FloatField
 from wtforms.validators import DataRequired, Optional
@@ -31,6 +31,7 @@ def select_datacube():
     if form.validate_on_submit():
         if not form.file.data:
             print('Please select a file to upload!')
+            flash('Please select a file to upload!', 'error')
         else:
             filename = secure_filename(form.file.data.filename)
             fname = os.path.join(upload_folder, filename)

@@ -50,6 +50,16 @@
                 <br />
             </form>
           </div>
+          {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <p class=flashes>
+            {% for message in messages %}
+              {{ message }}
+             {% endfor %}
+            </p>
+          {% endif %}
+          {% endwith %}
+          {% block body %}{% endblock %}
           <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
           </p>
         </div>
