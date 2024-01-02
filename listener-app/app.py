@@ -30,16 +30,18 @@ def select_datacube():
 
     if form.validate_on_submit():
         if not form.file.data:
-            print('Please select a file to upload!')
             flash('Please select a file to upload!', 'error')
         else:
             filename = secure_filename(form.file.data.filename)
             fname = os.path.join(upload_folder, filename)
             form.file.data.save(fname)
-            if not form.minwl.data or not form.maxwl.data:
+            if not form.minwl.data and not form.maxwl.data:
                 make_grid(fname)
             else:
-                make_grid(fname, minwl, maxwl)
+                if form.minwl.data and form.maxwl.data and minwl >= maxwl:
+                    flash('Selected wavelength range invalid!')
+                else:    
+                    make_grid(fname, minwl, maxwl)
         nspaxel = sum(1 for _ in open('static/pixcols.csv'))
         nside = math.isqrt(nspaxel)
         metadata = {'nside': nside}
