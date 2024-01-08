@@ -20,7 +20,7 @@ class UploadForm(FlaskForm):
     maxwl = FloatField('Maximum Wavelength', validators=[Optional()])
 
 @app.route('/', methods=['GET', 'POST'])
-def select_datacube():
+def index():
     form = UploadForm()
     minwl = form.data['minwl']
     maxwl = form.data['maxwl']
@@ -28,26 +28,37 @@ def select_datacube():
     nside = math.isqrt(nspaxel)
     metadata = {'nside': nside}
 
+    ## On 'Generate Audio Files':
+    ##     Check if new file selected, or previous filename has been saved
+    ##     Check wavelength range (if selected) is valid
     if form.validate_on_submit():
         if not form.file.data:
-            flash('Please select a file to upload!', 'error')
+            fn = './static/audio/filename.txt'
+            if not os.path.isfile(fn):
+                flash('Please select a file to upload!', 'error')
+            elif form.minwl.data and form.maxwl.data and minwl >= maxwl:
+                    flash('Selected wavelength range invalid!')
+            else: 
+                with open(fn) as f:
+                    fname = f.read()   
+                make_grid(fname, minwl, maxwl)
         else:
             filename = secure_filename(form.file.data.filename)
             fname = os.path.join(upload_folder, filename)
             form.file.data.save(fname)
-            if not form.minwl.data and not form.maxwl.data:
-                make_grid(fname)
-            else:
-                if form.minwl.data and form.maxwl.data and minwl >= maxwl:
-                    flash('Selected wavelength range invalid!')
-                else:    
-                    make_grid(fname, minwl, maxwl)
+            with open('./static/audio/filename.txt', 'w') as f:
+                f.write(fname)
+            if form.minwl.data and form.maxwl.data and minwl >= maxwl:
+                flash('Selected wavelength range invalid!')
+            else:    
+                make_grid(fname, minwl, maxwl)
+
         nspaxel = sum(1 for _ in open('static/pixcols.csv'))
         nside = math.isqrt(nspaxel)
         metadata = {'nside': nside}
-        return redirect(url_for('select_datacube', form=form, metadata=metadata))
+        return redirect(url_for('index', form=form, metadata=metadata))
 
-    return render_template('select_datacube.html', form=form, metadata=metadata)
+    return render_template('index.html', form=form, metadata=metadata)
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)
