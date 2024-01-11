@@ -68,7 +68,14 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         
     for f in glob.glob(fname):
         t0 = time.time()
-        data, header = pyfits.getdata(fname, header=True)
+        data, header = pyfits.getdata(f, header=True)
+        for k in header.keys():
+            print (f"{k} :: {header[k]}")
+
+        if 'CDELT3' not in header:
+            if 'CD3_3' in header:
+                header['CDELT3'] = header['CD3_3']
+        
         data[np.isnan(data)] = 0.
         wlens = np.linspace(header['CRVAL3'], (header['NAXIS3']-1)*header['CDELT3']+header['CRVAL3'], header['NAXIS3'])
 
