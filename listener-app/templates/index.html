@@ -50,6 +50,7 @@
                 <br />
             </form>
           </div>
+          <div class="messages">
           {% with messages = get_flashed_messages() %}
           {% if messages %}
             <p class=flashes style="font-weight:bold">
@@ -59,12 +60,16 @@
             </p>
           {% endif %}
           {% endwith %}
-          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />Creating audio files</div>
+          </div>
+          <div class="creating">
+          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />&nbsp; Creating audio files</div>
+          </div>
           </p>
         </div>
         <div class="main">
             <canvas id='mycanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
             </canvas>
+            <h2>{{fname}}</h2>
         </div>
         <div class="right">
             <div style="width: 100%; margin: 0 auto;">

@@ -53,12 +53,24 @@ def index():
             else:    
                 make_grid(fname, minwl, maxwl)
 
+        ## Pass filename to display as title above canvas
+        if fname.find("/")!=-1:
+            fname=fname[fname.rindex("/")+1:]
         nspaxel = sum(1 for _ in open('static/pixcols.csv'))
         nside = math.isqrt(nspaxel)
         metadata = {'nside': nside}
-        return redirect(url_for('index', form=form, metadata=metadata))
+        return redirect(url_for('index', form=form, metadata=metadata, fname=fname))
 
-    return render_template('index.html', form=form, metadata=metadata)
+    ## Pass filename to display as title above canvas
+    fn = './static/audio/filename.txt'
+    try:
+        with open(fn) as f:
+            fname = f.read()
+            if fname.find("/")!=-1:
+                fname=fname[fname.rindex("/")+1:]
+    except IOError:
+        fname=""
+    return render_template('index.html', form=form, metadata=metadata, fname=fname)
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

@@ -173,6 +173,7 @@ switchDarkModeButton.addEventListener("click", () => {
     if (isDarkMode){
         var element = document.body;
         element.classList.toggle("dark-mode");
+        localStorage.setItem("darkmode", "light");
 	isDarkMode = false;
 	switchDarkModeButton.innerHTML = 'Use Dark Mode';
 	
@@ -193,6 +194,7 @@ switchDarkModeButton.addEventListener("click", () => {
     else {
         var element = document.body;
         element.classList.toggle("dark-mode");
+        localStorage.setItem("darkmode", "dark");
 	isDarkMode = true;
 	switchDarkModeButton.innerHTML = 'Use Light Mode';
 
