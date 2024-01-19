@@ -52,12 +52,32 @@ def dsamp_ifu(a, dsamp):
     host = np.zeros((preshape[0]+augx, preshape[1]+augy, a.shape[-1]))
     offstx = augx//2
     offsty = augy//2
-    print(remx,remy, host.shape, offstx, host.shape[0]-augx+offstx,  offsty, host.shape[1]-augy+offsty)
+    # print(remx,remy, host.shape, offstx, host.shape[0]-augx+offstx,  offsty, host.shape[1]-augy+offsty)
     host[offstx:host.shape[0]-augx+offstx, offsty:host.shape[1]-augy+offsty,:] = a
     shape = (host.shape[0]//dsamp, host.shape[1]//dsamp)
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
+def make_whitelight(data, pc=99., contrast=vcontrast, outfile="static/whitelight.png"):
+    wlight = data.sum(axis=0)
+    # clip to percentile limit and apply contrast
+    wlight = np.clip(wlight, 0, np.percentile(wlight, pc))**contrast
+
+    # pad to square
+    wdims = wlight.shape
+
+    if wdims[0] != wdims[1]:
+        wdimord = np.argsort(wdims)
+        hostarr = np.zeros([wdims[wdimord[1]]]*2)
+        margin = (wdims[wdimord[1]] - wdims[wdimord[0]]) // 2
+        # indexing depends on which axis is bigger
+        if np.diff(wdimord)[0]:
+            hostarr[margin:wdims[0],:] = wlight
+        else:
+            hostarr[:,margin:wdims[1]] = wlight
+        wlight = hostarr
+    plt.imsave(outfile, wlight[::-1,::-1].T, cmap='inferno')
+        
 def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     '''Reads datacube. Prepares and writes data for spectra and whitelight
        image into csv files. Creates audio files for each pixel in image.'''
@@ -83,21 +103,27 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         lidx = np.argmin(wlens)
         ridx = np.argmax(wlens)
         
+<<<<<<< HEAD
         ## Reduce wavelength range if valid options selected
+=======
+>>>>>>> 415c4ec (produce prototype whitelight image, and revisiting integrated spectrum (in progress))
         if minwl is not None:
             if minwl > np.min(wlens) and minwl < np.max(wlens):
                 lidx = np.where(wlens>=minwl)[0][0]
         if maxwl is not None:
             if maxwl < np.max(wlens) and maxwl > np.min(wlens):
                 ridx = np.where(wlens>=maxwl)[0][0]
+
                 
         data = data[lidx:ridx]
         wlens = wlens[lidx:ridx]
+
+        make_whitelight(data)
         
         print(data.shape, header['CDELT3'], header['CRVAL3'])
         # plt.plot(data.sum(axis=-1).sum(axis=-1))
         # plt.show()    
-        # data = dsamp_ifu(data,2)
+        data = dsamp_ifu(data,3)
     
         maxpos = np.unravel_index(np.argmax(data.sum(0)), data.shape[1:])
 
@@ -183,22 +209,28 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         print(f"setup {t2-t1:.2f} s")
 
         intspec = spec.sum(axis=-1)
-        intspec = np.clip((spec.T/spec.max()), 1e-3, 1)
+        intspec = np.clip((intspec/intspec.max()), 1e-3, 1)
+
+        print(intspec.shape)
         #intspec = spec[:, :ydim, :xdim].sum(axis=0)
 
         outspec = np.clip((spec.T/spec.max()), 1e-3, 1)
+        intspec = outspec
         # outspec = np.log10(np.clip(outspec)
     
         np.savetxt('static/pixcols.csv', (np.row_stack(pixcol)*255).astype(int), delimiter=',', fmt='%d')
         np.savetxt('static/wlens.csv', wlens, delimiter=',', fmt='%e')
         np.savetxt('static/spec.csv', np.row_stack([wlens,outspec]), delimiter=',', fmt='%e')
         np.savetxt('static/intspec.csv', np.row_stack([wlens,intspec]), delimiter=',', fmt='%e')
+        print(np.row_stack([wlens,intspec]))
+        # print(wlens, intspec)
+        
         # plt.show()    
     
         # plt.title(f'Average Spectrum for Channel {ch} Data Cube')
         # plt.plot(wlens,data.mean(-1).mean(-1))
 
-        plt.xlabel(header['CUNIT3'])
+        # plt.xlabel(header['CUNIT3'])
 
 if __name__ == "__main__":
     #fname = f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'
