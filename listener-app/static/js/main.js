@@ -782,7 +782,7 @@ function initializeChart(wlensArray) {
                         }
  		    },
 		    max: 1.01,
-		    min: 3e-3,
+		    min: 4.5e-4,
 		},
 		x: {
                   grid: {
@@ -816,8 +816,9 @@ function initializeChart(wlensArray) {
 loadSpectrum('static/intspec.csv')
     .then(intspec => {
 	intspecWlens = intspec.shift();
-	intspecVals = intspec[1];
+	intspecVals = intspec[0];
 	intChart(intspecWlens, intspecVals);
+	console.log(intspecVals);
 	console.log("Spectrum Loaded.");
     })
     .catch(error => {
