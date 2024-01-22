@@ -58,34 +58,25 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-def make_grid(fname, minwl=None, maxwl=None):
-
+def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
+    '''Reads datacube. Prepares and writes data for spectra and whitelight
+       image into csv files. Creates audio files for each pixel in image.'''
+       
     if not glob.glob(fname):
         print('No such file!')
+        return
+        
     for f in glob.glob(fname):
-
         t0 = time.time()
-        data, header = pyfits.getdata(f, header=True)
-
+        data, header = pyfits.getdata(fname, header=True)
         data[np.isnan(data)] = 0.
         wlens = np.linspace(header['CRVAL3'], (header['NAXIS3']-1)*header['CDELT3']+header['CRVAL3'], header['NAXIS3'])
-        # # data = data[2100:2230]
-        # data = data[700:900]
 
-	#------
-        #lidx = 750
-        #ridx = 785
-
-        #data = data[lidx:ridx]
-        #wlens = wlens[lidx:ridx]
-        #------
-        
-        #data = data[300:900]
-
-        ## Allow selected range in wavelength
-                
+        ## Set wavelength range to cover whole spectrum        
         lidx = np.argmin(wlens)
         ridx = np.argmax(wlens)
+        
+        ## Reduce wavelength range if valid options selected
         if minwl is not None:
             if minwl > np.min(wlens) and minwl < np.max(wlens):
                 lidx = np.where(wlens>=minwl)[0][0]
@@ -104,13 +95,25 @@ def make_grid(fname, minwl=None, maxwl=None):
         maxpos = np.unravel_index(np.argmax(data.sum(0)), data.shape[1:])
 
     
-        r_cen = maxpos[::-1]
-        r_cen = (data.shape[1]//2, data.shape[2]//2)
+        r_cen = np.asarray(maxpos[::-1])
+        #r_cen = (data.shape[1]//2, data.shape[2]//2)
         print(r_cen)
 
-        #wlens = np.linspace(1000,5000,data.shape[0])
+        ## Re-centre on selected spatial selection
+        #offset_x = int((maxx - minx) / 2) - 12
+        #offset_y = int((maxy - miny) / 2) - 12
+        #r_cen[1] += offset_x
+        #r_cen[0] += offset_y
+
         ap = 12
-        censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
+        #censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
+
+        x1 = ap - minx
+        x2 = maxx - ap
+        y1 = ap - miny
+        y2 = maxy - ap
+        censel = data[:,r_cen[1]-x1:r_cen[1]+x2,r_cen[0]-y1:r_cen[0]+y2]
+
         #censel = data[:, 3:-3, :]
         print(censel)
         censel = np.rot90(censel, k =3, axes=(1,2))
@@ -194,6 +197,6 @@ if __name__ == "__main__":
     #fname = f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'
     #fname = f'DataCubes/J1316+1753_240222.fits'
     fname = f'DataCubes/Level3_ch1-long_s3d.fits'
-    make_grid(fname)
+    make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24)
 
 

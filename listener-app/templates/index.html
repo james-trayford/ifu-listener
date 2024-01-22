@@ -40,10 +40,20 @@
                 {{ form.file }}
                 <br />
                 {{ form.minwl.label }}
-                {{ form.minwl }}
+                {{ form.minwl(style='width: 60px; font-size: 16px;') }}
                 <br />
                 {{ form.maxwl.label }}
-                {{ form.maxwl }}
+                {{ form.maxwl(style='width: 60px; font-size: 16px;') }}
+                <br />
+                {{ form.minx.label }}
+                {{ form.minx(style='width: 60px; font-size: 16px;', id="thb_left") }}
+                {{ form.maxx.label }}
+                {{ form.maxx(style='width: 60px; font-size: 16px;', id="thb_right") }}
+                <br />
+                {{ form.miny.label }}
+                {{ form.miny(style='width: 60px; font-size: 16px;', id="thb_top") }}
+                {{ form.maxy.label }}
+                {{ form.maxy(style='width: 60px; font-size: 16px;', id="thb_bottom") }}
                 <br /><br />
                 <button type="submit" value="Submit" onclick="$('#loading').show();"
 >Generate Audio Files</button> 
@@ -51,31 +61,54 @@
             </form>
           </div>
           <div class="messages">
-          {% with messages = get_flashed_messages() %}
-          {% if messages %}
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
             <p class=flashes style="font-weight:bold">
-            {% for message in messages %}
+              {% for message in messages %}
               {{ message }}
-             {% endfor %}
+              {% endfor %}
             </p>
-          {% endif %}
-          {% endwith %}
+            {% endif %}
+            {% endwith %}
           </div>
           <div class="creating">
-          <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />&nbsp; Creating audio files</div>
+            <div id="loading" style="display:none;"><img src="{{ url_for('static', filename='images/loading.gif') }}" alt="" />&nbsp; Creating audio files</div>
           </div>
           </p>
         </div>
         <div class="main">
-            <canvas id='mycanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
+            <h2>Listener</h2>
+            <canvas id='mainCanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
             </canvas>
             <h2>{{fname}}</h2>
+            <canvas id="mainChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
         </div>
         <div class="right">
             <div style="width: 100%; margin: 0 auto;">
+            <h2>Viewfinder</h2>
+            
+            <img id="fullDatacube" src="../static/images/dummy.png"
+                class="card-img-top" alt="2D image of full datacube"
+                style="position:relative">
+            <canvas id="imageCanvas" 
+                style="position:absolute; left: 0px; top: 0px">
+            </canvas>
+
+      <!--<div>
+        <label for="thb_left" class="labels">x Range</label>
+        <input type="text" id="thb_left" name="thb_left" value="0" readonly>
+        <label for="thb_right" class="labels">:</label>
+        <input type="text" id="thb_right" name="thb_right" value="0" readonly>
+        <br />
+        <label for="thb_top" class="labels">y Range</label>
+        <input type="text" id="thb_top" name="thb_top" value="0" readonly>
+        <label for="thb_bottom" class="labels">:</label>
+        <input type="text" id="thb_bottom" name="thb_bottom" value="0" readonly>
+        <br /><br />
+      </div>-->
+            <br /><br /><br />
+
             <canvas id="integratedChart" aria-label="Line chart showing integrated spectrum for datacube: peak-normalised flux as a function of wavelength." role="img"></canvas>
-            <br />
-            <canvas id="myChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
             </div>
         </div>
       </div>
