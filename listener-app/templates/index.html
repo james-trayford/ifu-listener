@@ -6,7 +6,8 @@
     <title>Grid of Audio Files</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="text/javascript">
-      var nside = parseInt({{ metadata.nside }})
+      var nside = parseInt({{ metadata.nside }});
+      var ppix = parseInt({{ metadata.ppix }});
     </script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -87,11 +88,11 @@
             <div style="width: 100%; margin: 0 auto;">
             <h2>Viewfinder</h2>
             
-            <img id="fullDatacube" src="../static/images/dummy.png"
+            <img id="fullDatacube" src="../static/images/whitelight.png"
                 class="card-img-top" alt="2D image of full datacube"
-                style="position:relative">
+                style="position:relative;">
             <canvas id="imageCanvas" 
-                style="position:absolute; left: 0px; top: 0px">
+		    style="position:absolute; left: 0px; top: 0px">
             </canvas>
 
       <!--<div>
