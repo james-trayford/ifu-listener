@@ -12,7 +12,7 @@ let intspecChart;
 var canvas = document.getElementById('mainCanvas');
 var ctx = canvas.getContext('2d');
 
-var panelsize = 16;
+var panelsize = ppix;
 var npanel =  nside;
 var fadetime = 0.03;
 var prefadetime = 0.03;

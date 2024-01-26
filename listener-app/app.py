@@ -34,7 +34,8 @@ def index():
     maxy = form.data['maxy']
     nspaxel = sum(1 for _ in open('static/pixcols.csv'))
     nside = math.isqrt(nspaxel)
-    metadata = {'nside': nside}
+    metadata = {'nside': nside,
+                'ppix': 400//nside}
 
     ## On 'Generate Audio Files':
     ##     Check if new file selected, or previous filename has been saved

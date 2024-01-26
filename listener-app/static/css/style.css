@@ -39,7 +39,7 @@ body.dark-mode .labels {
 }
 
 .wrapper {
-  font-family: 'Quicksand',sans-serif';
+  font-family: "Quicksand",sans-serif;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,4 +140,12 @@ input[type="submit"] {
   overflow: hidden;
 }
 
-
+img {
+    max-width: 100%;
+    max-height: 100%;
+}
+.card-img-top {
+    height: 400px;
+    width: 400px;
+    image-rendering: pixelated;
+}
