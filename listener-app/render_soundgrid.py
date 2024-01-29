@@ -18,21 +18,6 @@ import astropy.io.fits as pyfits
 import glob
 import sys
 
-# which channel do we want to use (1,2,3 or 4)?
-ch = 2
-
-acontrast = 1.*1.4
-vcontrast = 0.5
-
-# specify audio system (e.g. mono, stereo, 5.1, ...)
-system = "mono"
-length = 1.1
-
-# set uo score object for sonification
-score =  Score(["C3"], length)
-generator = Spectralizer()
-generator.modify_preset({'min_freq':40, 'max_freq':800})
-
 def get_continuum(wavelengths, spectrum, deg=12):
     # we fit the continuum of the spectrum as 
     # p[0]*wavelengths**deg + p[1]*wavelengths**(deg-1) + ... + p[deg]*wavelengths**0
@@ -58,7 +43,7 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-def make_whitelight(data, pc=99., contrast=vcontrast, outfile="static/images/whitelight.png"):
+def make_whitelight(data, pc=99., contrast=0.5, outfile="static/images/whitelight.png"):
     wlight = data.sum(axis=0)
     # clip to percentile limit and apply contrast
     wlight = np.clip(wlight, 0, np.percentile(wlight, pc))**contrast
@@ -75,12 +60,29 @@ def make_whitelight(data, pc=99., contrast=vcontrast, outfile="static/images/whi
         else:
             hostarr[margin:wdims[0]+margin,:] = wlight
         wlight = hostarr
-    plt.imsave(outfile, wlight[::-1,::-1].T, cmap='viridis')
+    plt.imsave(outfile, wlight[::-1,::-1].T, cmap='magma')
         
 def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     '''Reads datacube. Prepares and writes data for spectra and whitelight
        image into csv files. Creates audio files for each pixel in image.'''
-       
+
+    # move globals here (L20-34)
+    # which channel do we want to use (1,2,3 or 4)?
+    ch = 2
+
+    acontrast = 1.*1.4
+    vcontrast = 0.5
+
+    # specify audio system (e.g. mono, stereo, 5.1, ...)
+    system = "mono"
+    length = 1.1
+
+    # set uo score object for sonification
+    score =  Score(["C3"], length)
+    generator = Spectralizer()
+    generator.modify_preset({'min_freq':40, 'max_freq':800})
+
+    
     if not glob.glob(fname):
         print('No such file!')
         return
@@ -112,7 +114,7 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         data = data[lidx:ridx]
         wlens = wlens[lidx:ridx]
 
-        make_whitelight(data)
+        make_whitelight(data, contrast=vcontrast)
         
         print(data.shape, header['CDELT3'], header['CRVAL3'])
         # plt.plot(data.sum(axis=-1).sum(axis=-1))

@@ -145,7 +145,7 @@ img {
     max-height: 100%;
 }
 .card-img-top {
-    height: 400px;
-    width: 400px;
+    height: 380px;
+    width: 380px;
     image-rendering: pixelated;
 }

@@ -49,6 +49,10 @@ var current_canvas_rect={}
 var mouseX, mouseY
 var startX, startY
 
+// The margin size around the image - gives space for rect + handles
+var icmargin = 10;
+var icmargin2 = icmargin * 2;
+
 var th_left = 0;
 var th_top = 0;
 var th_right = 24;
@@ -64,7 +68,7 @@ var effective_image_height = 24;
 //drawRectInCanvas() connected functions -- START
 function updateHiddenInputs(){
   var inverse_ratio_w =  effective_image_width / imageCanvas.width;
-  var inverse_ratio_h = effective_image_height / imageCanvas.height ;
+  var inverse_ratio_h = effective_image_height / imageCanvas.height;
   h_th_left.value = Math.round(rect.left * inverse_ratio_w)
   h_th_top.value = Math.round(rect.top * inverse_ratio_h)
   h_th_right.value = Math.round((rect.left + rect.width) * inverse_ratio_w)
@@ -222,18 +226,18 @@ function mouseMove(e) {
 }
 
 function updateCurrentCanvasRect(){
-  current_canvas_rect.height = imageCanvas.height
-  current_canvas_rect.width = imageCanvas.width
-  current_canvas_rect.top = image.offsetTop
-  current_canvas_rect.left = image.offsetLeft
+  current_canvas_rect.height = imageCanvas.height - icmargin2
+  current_canvas_rect.width = imageCanvas.width - icmargin2
+  current_canvas_rect.top = image.offsetTop + icmargin
+  current_canvas_rect.left = image.offsetLeft + icmargin
 }
 
 function repositionCanvas(){
   //make canvas same as image, which may have changed size and position
-  imageCanvas.height = image.height;
-  imageCanvas.width = image.width;
-  imageCanvas.style.top = image.offsetTop + "px";;
-  imageCanvas.style.left = image.offsetLeft + "px";
+  imageCanvas.height = image.height+icmargin2;
+  imageCanvas.width = image.width+icmargin2;
+  imageCanvas.style.top = image.offsetTop - icmargin + "px";;
+  imageCanvas.style.left = image.offsetLeft - icmargin + "px";
   //compute ratio comparing the NEW canvas rect with the OLD (current)
   var ratio_w = imageCanvas.width / current_canvas_rect.width;
   var ratio_h = imageCanvas.height / current_canvas_rect.height;
@@ -247,21 +251,21 @@ function repositionCanvas(){
 }
 
 function initCanvas(){
-  imageCanvas.height = image.height;
-  imageCanvas.width = image.width;
-  imageCanvas.style.top = image.offsetTop + "px";;
-  imageCanvas.style.left = image.offsetLeft + "px";
+  imageCanvas.height = image.height+icmargin2;
+  imageCanvas.width = image.width+icmargin2;
+  imageCanvas.style.top = image.offsetTop - icmargin + "px";;
+  imageCanvas.style.left = image.offsetLeft - icmargin + "px";
   updateCurrentCanvasRect();
 }
 
 function initRect(){
   var ratio_w = imageCanvas.width / effective_image_width;
   var ratio_h = imageCanvas.height / effective_image_height;
-  //BORDER OF SIZE 6!
-  rect.height = th_height*ratio_h-6
-  rect.width = th_width*ratio_w-6
-  rect.top = th_top*ratio_h+3
-  rect.left = th_left*ratio_w+3
+  // Align with inset image
+  rect.height = th_height*ratio_h-icmargin2
+  rect.width = th_width*ratio_w-icmargin2
+  rect.top = th_top*ratio_h+icmargin
+  rect.left = th_left*ratio_w+icmargin
 }
 
 function init(){
