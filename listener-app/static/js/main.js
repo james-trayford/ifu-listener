@@ -12,6 +12,7 @@ let intspecChart;
 var canvas = document.getElementById('mainCanvas');
 var ctx = canvas.getContext('2d');
 
+
 var panelsize = ppix;
 var npanel =  nside;
 var fadetime = 0.03;
@@ -63,7 +64,6 @@ var th_height = th_bottom - th_top;
 
 var effective_image_width = 24;
 var effective_image_height = 24;
-
 
 //drawRectInCanvas() connected functions -- START
 function updateHiddenInputs(){
@@ -324,6 +324,23 @@ const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
 
 
+// Check for dark mode on first loading (or refreshing) the page
+var element = document.body;
+let darkMode = localStorage.getItem("dark-mode");
+if (darkMode === "enabled") {
+  element.classList.toggle("dark-mode");
+  isDarkMode = true;
+  switchDarkModeButton.innerHTML = 'Use Light Mode';
+  console.log("Dark Mode.");
+  var modeline = "rgb(255,255,0)";
+  var modegrid = "rgb(255,255,255,0.25)";
+  var modefont = "rgb(255,255,255,0.7)";
+} else {
+  var modeline = "rgb(0,0,0)";
+  var modegrid = "rgb(0,0,0,0.25)";
+  var modefont = "rgb(0,0,0,0.7)";
+}
+
 // ---------- load integrated spectrum -----------------
 
 function loadSpectrum(filePath) {
@@ -428,7 +445,7 @@ switchDarkModeButton.addEventListener("click", () => {
     if (isDarkMode){
         var element = document.body;
         element.classList.toggle("dark-mode");
-        localStorage.setItem("darkmode", "light");
+        localStorage.setItem("dark-mode", "disabled");
 	isDarkMode = false;
 	switchDarkModeButton.innerHTML = 'Use Dark Mode';
 	
@@ -449,7 +466,7 @@ switchDarkModeButton.addEventListener("click", () => {
     else {
         var element = document.body;
         element.classList.toggle("dark-mode");
-        localStorage.setItem("darkmode", "dark");
+        localStorage.setItem("dark-mode", "enabled");
 	isDarkMode = true;
 	switchDarkModeButton.innerHTML = 'Use Light Mode';
 
@@ -660,7 +677,7 @@ function intChart(intspecWlens, intspecVals) {
             datasets: [{
                 label: 'Integrated Spectrum',
                 data: intspecVals,
-                borderColor: midgry,
+                borderColor: modeline,
                 borderWidth: 3,
 		pointStyle: false,
                 fill: false
@@ -686,12 +703,14 @@ function intChart(intspecWlens, intspecVals) {
 	    scales: {
  		y: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid,
                   },
                   ticks: {
+                        color: modefont,
                         font: {
                                size: 14,
-	                       weight: "bold"
+	                       weight: "bold",
+	                       color: modefont
                          }
                     },
 		    title: {
@@ -707,9 +726,10 @@ function intChart(intspecWlens, intspecVals) {
 		},
 		x: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid,
                   },
                     ticks: {
+                        color: modefont,
                         font: {
                                size: 14,
 	                       weight: "bold"
@@ -743,7 +763,7 @@ function initializeChart(wlensArray) {
             datasets: [{
                 label: 'Spectral Dimension',
                 data: initArray,
-                borderColor: midgry,
+                borderColor: modeline,
                 borderWidth: 3,
 		pointStyle: false,
                 fill: false
@@ -769,12 +789,13 @@ function initializeChart(wlensArray) {
 	    scales: {
  		y: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid
                   },
                   ticks: {
                         font: {
                                size: 14,
-	                       weight: "bold"
+	                       weight: "bold",
+	                       color: modefont
                          }
                     },
 		    title: {
@@ -790,12 +811,13 @@ function initializeChart(wlensArray) {
 		},
 		x: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid
                   },
                     ticks: {
                         font: {
                                size: 14,
-	                       weight: "bold"
+	                       weight: "bold",
+	                       color: modefont
                          }
                     },
 		    title: {
@@ -841,3 +863,5 @@ loadSpectra('static/spec.csv')
   .catch(error => {
     console.error('Error reading the file:', error);
   });
+  
+
