@@ -11,6 +11,7 @@
     </script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
    </head>
   <body>
     <audio id="in-sound">
@@ -29,7 +30,8 @@
       
         <div class="sidebar">
           <p>
-          <button class="setup-context"> Setup Audio Engine</button> <br /><br />
+          <!--<button class="setup-context"> Setup Audio Engine</button>-->
+          <br /><br /><br />
           <button class="helper-switch"> Turn Off Helper Sounds </button> <br />
           <button class="dark-mode">Use Dark Mode</button> <br />
           <button class="switch-axis"> Use Log Y Scale </button> <br />
@@ -79,7 +81,7 @@
         </div>
         <div class="main">
             <h2>Listener</h2>
-            <canvas id='mainCanvas' aria-label="2D image. Click and hold mouse to hear spectrum for each pixel." role="main">
+            <canvas id='mainCanvas' aria-label="2D image of datacube. Click and hold mouse to hear spectrum for each pixel." role="main">
             </canvas>
             <h3>{{fname}}</h2>
             <canvas id="mainChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
@@ -90,23 +92,10 @@
             
             <img id="fullDatacube" src="../static/images/whitelight.png"
                 class="card-img-top" alt="2D image of full datacube"
-                style="position:relative;">
+                style="position:relative;" aria-label="2D image of full datacube. Move the corners of the overlaid rectangle to select a smaller region." role="img">
             <canvas id="imageCanvas" 
 		    style="position:absolute; left: 0px; top: 0px">
             </canvas>
-
-      <!--<div>
-        <label for="thb_left" class="labels">x Range</label>
-        <input type="text" id="thb_left" name="thb_left" value="0" readonly>
-        <label for="thb_right" class="labels">:</label>
-        <input type="text" id="thb_right" name="thb_right" value="0" readonly>
-        <br />
-        <label for="thb_top" class="labels">y Range</label>
-        <input type="text" id="thb_top" name="thb_top" value="0" readonly>
-        <label for="thb_bottom" class="labels">:</label>
-        <input type="text" id="thb_bottom" name="thb_bottom" value="0" readonly>
-        <br /><br />
-      </div>-->
             <br /><br /><br />
 
             <canvas id="integratedChart" aria-label="Line chart showing integrated spectrum for datacube: peak-normalised flux as a function of wavelength." role="img"></canvas>

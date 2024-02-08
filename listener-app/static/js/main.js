@@ -316,13 +316,22 @@ var lmgrid = "rgb(0,0,0,0.25)"
 var lmfont = "rgb(0,0,0,0.7)"
 var midgry = "rgb(115,115,115)"
 
-const setupContextButton = document.querySelector(".setup-context")
+//const setupContextButton = document.querySelector(".setup-context")
 const switchYAxisButton = document.querySelector(".switch-axis")
 const switchShowNewButton = document.querySelector(".show-new")
 const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
 
+
+// Check for helper sounds on first loading (or refreshing) the page
+//let helperSounds = localStorage.getItem("helper-sounds");
+//if (helperSounds === "enabled") {
+//  useHelperSounds = true;
+//  switchHelperButton.innerHTML = 'Turn Off Helper Sounds';
+//  console.log("Helper Sounds On.");
+//  specChart.update();
+//}
 
 // Check for dark mode on first loading (or refreshing) the page
 var element = document.body;
@@ -407,7 +416,21 @@ function loadWhiteLight(filePath, callback) {
     });
 }
 
-setupContextButton.addEventListener("click", () => {
+//setupContextButton.addEventListener("click", () => {
+//    if (!isContextSetUp) {
+//	useHelperSounds = true;
+//	audioContext = new AudioContext();
+//	console.log("User Gestured to start Audio Context.");
+//	getSoundGrid().then((response) => {
+//	    audioBuffers = response;
+//	    [sourceNodes, gainNodes] = routeAudio();
+//	});
+//	console.log("Setup Done.");
+//  }
+//    isContextSetUp = true;
+//});
+
+canvas.addEventListener("click", () => {
     if (!isContextSetUp) {
 	useHelperSounds = true;
 	audioContext = new AudioContext();
@@ -420,6 +443,7 @@ setupContextButton.addEventListener("click", () => {
     }
     isContextSetUp = true;
 });
+
 
 switchYAxisButton.addEventListener("click", () => {
     if (isYAxisLog){
@@ -494,11 +518,13 @@ switchDarkModeButton.addEventListener("click", () => {
 
 switchHelperButton.addEventListener("click", () => {
     if (useHelperSounds){
+        //localStorage.setItem("helper-sounds", "disabled");
 	useHelperSounds = false;
 	switchHelperButton.innerHTML = 'Turn On Helper Sounds';
 	console.log("Helper Sounds Off.");
     }
     else {
+        //localStorage.setItem("helper-sounds", "enabled");
 	useHelperSounds = true;
 	switchHelperButton.innerHTML = 'Turn Off Helper Sounds';
 	console.log("Helper Sounds On.");
