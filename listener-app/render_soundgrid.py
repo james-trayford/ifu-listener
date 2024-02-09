@@ -12,7 +12,9 @@ from scipy.io import wavfile
 import time
 
 # other useful modules
+from matplotlib import cm, colors
 import matplotlib.pyplot as plt
+from PIL import Image
 import numpy as np
 import astropy.io.fits as pyfits
 import glob
@@ -43,24 +45,36 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-def make_whitelight(data, pc=99., contrast=0.5, outfile="static/images/whitelight.png"):
+def make_whitelight(data, pc=99., contrast=0.5, outfile="static/images/whitelight.png", greyshade=0.5, margin=2):
     wlight = data.sum(axis=0)
+    wlight /= np.percentile(wlight, pc)
     # clip to percentile limit and apply contrast
-    wlight = np.clip(wlight, 0, np.percentile(wlight, pc))**contrast
-
+    wlight = np.clip(wlight, 0, 1)**contrast
+    cmap = (cm.magma(wlight[::-1,::-1].T)*255).astype('uint8')
+    greyval = int(greyshade*255)
+    
     wdims = wlight.shape
     if wdims[0] != wdims[1]:
         # pad to square
         wdimord = np.argsort(wdims)
-        hostarr = np.zeros([wdims[wdimord[1]]]*2)
+        hostarr = np.dstack([np.zeros([wdims[wdimord[1]]]*2)]*4)
+        hostarr[:,:,:3] = greyval
+        hostarr[:,:,-1] = 0
         margin = (wdims[wdimord[1]] - wdims[wdimord[0]]) // 2
         # indexing depends on which axis is bigger
         if np.diff(wdimord)[0]:
-            hostarr[:,margin:wdims[1]+margin] = wlight
+            hostarr[:,margin:wdims[1]+margin, :] = cmap
         else:
-            hostarr[margin:wdims[0]+margin,:] = wlight
-        wlight = hostarr
+            hostarr[margin:wdims[0]+margin,:,:] = cmap
+        cmap = hostarr.astype('uint8')
+    final = np.zeros((cmap.shape[0]+2*margin, cmap.shape[1]+2*margin,
+                      cmap.shape[2])).astype('uint8')+greyval
+    final[:,:,-1] = 255
+    final[margin:-margin,margin:-margin,:] = cmap
     plt.imsave(outfile, wlight[::-1,::-1].T, cmap='magma')
+    img = Image.fromarray(final, 'RGBA')            
+    img.save(outfile)
+
         
 def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     '''Reads datacube. Prepares and writes data for spectra and whitelight
