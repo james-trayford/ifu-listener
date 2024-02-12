@@ -8,6 +8,8 @@
     <script type="text/javascript">
       var nside = parseInt({{ metadata.nside }});
       var ppix = parseInt({{ metadata.ppix }});
+      var vfmargin_x = parseInt({{ metadata.vfmargin_x}});
+      var vfmargin_y = parseInt({{ metadata.vfmargin_y}});
     </script>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">

@@ -54,7 +54,7 @@ def index():
             else: 
                 with open(fn) as f:
                     fname = f.read() 
-                make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
+                mgdata = make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
         else:
             filename = secure_filename(form.file.data.filename)
             fname = os.path.join(upload_folder, filename)
@@ -64,14 +64,14 @@ def index():
             if form.minwl.data and form.maxwl.data and minwl >= maxwl:
                 flash('Selected wavelength range invalid!')
             else:    
-                make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
+                mgdata = make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
 
         ## Pass filename to display below canvas
         if fname.find("/")!=-1:
             fname=fname[fname.rindex("/")+1:]
-        nspaxel = sum(1 for _ in open('static/pixcols.csv'))
-        nside = math.isqrt(nspaxel)
-        metadata = {'nside': nside}
+        # nspaxel = sum(1 for _ in open('static/pixcols.csv'))
+        # nside = math.isqrt(nspaxel)
+        # metadata = {'nside': nside}
         return redirect(url_for('index', form=form, metadata=metadata, fname=fname))
 
     ## Pass filename to display below canvas
