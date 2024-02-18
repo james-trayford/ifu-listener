@@ -39,7 +39,7 @@ var h_th_top = document.getElementById('thb_top')
 var h_th_right = document.getElementById('thb_right')
 var h_th_bottom = document.getElementById('thb_bottom')
 
-var handleRadius = 10
+var handleRadius = 5
 
 var dragTL = dragBL = dragTR = dragBR = false;
 var dragWholeRect = false;
@@ -51,28 +51,29 @@ var mouseX, mouseY
 var startX, startY
 
 // The margin size around the image - gives space for rect + handles
-var icmargin = 10;
+var icmargin = 5;
 var icmargin2 = icmargin * 2;
+var icborder = 0;
 
 var th_left = 0;
 var th_top = 0;
-var th_right = 24;
-var th_bottom = 24;
+var th_right = 100;
+var th_bottom = 100.;
 
 var th_width = th_right - th_left;
 var th_height = th_bottom - th_top;
 
-var effective_image_width = 24;
-var effective_image_height = 24;
+var effective_image_width = 100.;
+var effective_image_height = 100.;
 
 //drawRectInCanvas() connected functions -- START
 function updateHiddenInputs(){
   var inverse_ratio_w =  effective_image_width / imageCanvas.width;
   var inverse_ratio_h = effective_image_height / imageCanvas.height;
-  h_th_left.value = Math.round(rect.left * inverse_ratio_w)
-  h_th_top.value = Math.round(rect.top * inverse_ratio_h)
-  h_th_right.value = Math.round((rect.left + rect.width) * inverse_ratio_w)
-  h_th_bottom.value = Math.round((rect.top + rect.height) * inverse_ratio_h)
+  h_th_left.value = Math.round(Math.max(rect.left-icmargin,0) * inverse_ratio_w)
+  h_th_top.value = Math.round(Math.max(rect.top-icmargin,0) * inverse_ratio_h)
+  h_th_right.value = Math.round((rect.left + rect.width + icmargin) * inverse_ratio_w)
+  h_th_bottom.value = Math.round((rect.top + rect.height + icmargin) * inverse_ratio_h)
 }
 
 function drawCircle(x, y, radius) {
@@ -83,11 +84,17 @@ function drawCircle(x, y, radius) {
   ictx.fill();
 }
 
+function drawSquare(x,y, side) {
+  var ictx = imageCanvas.getContext("2d");
+  ictx.fillStyle = "#4CBB17";
+  ictx.fillRect(x,y,side,side);
+}
+
 function drawHandles() {
-  drawCircle(rect.left, rect.top, handleRadius);
-  drawCircle(rect.left + rect.width, rect.top, handleRadius);
-  drawCircle(rect.left + rect.width, rect.top + rect.height, handleRadius);
-  drawCircle(rect.left, rect.top + rect.height, handleRadius);
+  drawSquare(rect.left-handleRadius, rect.top-handleRadius, handleRadius);
+  drawSquare(rect.left + rect.width, rect.top-handleRadius, handleRadius);
+  drawSquare(rect.left + rect.width, rect.top + rect.height, handleRadius);
+  drawSquare(rect.left-handleRadius, rect.top + rect.height, handleRadius);
 }
 
 function drawRectInCanvas()
@@ -95,9 +102,9 @@ function drawRectInCanvas()
   var ictx = imageCanvas.getContext("2d");
   ictx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
   ictx.beginPath();
-  ictx.lineWidth = "6";
-  ictx.fillStyle = "rgba(255, 230, 87, 0.1)";
-  ictx.strokeStyle = "#ffe657";
+  ictx.lineWidth = "4";
+  ictx.fillStyle = "rgba(76, 187, 23, 0.1)";
+  ictx.strokeStyle = "#4CBB17";
   ictx.rect(rect.left, rect.top, rect.width, rect.height);
   ictx.fill();
   ictx.stroke();
@@ -117,7 +124,7 @@ function checkInRect(x, y, r) {
 }
 
 function checkCloseEnough(p1, p2) {
-  return Math.abs(p1 - p2) < handleRadius;
+  return Math.abs(p1 - p2) < 2*handleRadius;
 }
 
 function getMousePos(imageCanvas, evt) {
@@ -172,17 +179,20 @@ function mouseDown(e) {
 
 function mouseMove(e) {    
   var pos = getMousePos(this,e);
+  // mouseX = Math.min(Math.max(pos.x, imageCanvas.width-icmargin), icmargin);
+  // mouseY = Math.min(Math.max(pos.y, imageCanvas.height-icmargin), icmargin);
   mouseX = pos.x;
-  mouseY = pos.y;
+  mouseY = pos.y;    
+  //console.log(`X: ${mouseX} | Y: ${mouseY}`);  
   if (dragWholeRect) {
       e.preventDefault();
       e.stopPropagation();
       dx = mouseX - startX;
       dy = mouseY - startY;
-      if ((rect.left+dx)>0 && (rect.left+dx+rect.width)<imageCanvas.width){
+      if ((rect.left+dx)>icmargin && (rect.left+dx+rect.width+icmargin)<imageCanvas.width){
         rect.left += dx;
       }
-      if ((rect.top+dy)>0 && (rect.top+dy+rect.height)<imageCanvas.height){
+      if ((rect.top+dy)>icmargin && (rect.top+dy+rect.height+icmargin)<imageCanvas.height){
         rect.top += dy;
       }
       startX = mouseX;
@@ -190,8 +200,13 @@ function mouseMove(e) {
   } else if (dragTL) {
       e.preventDefault();
       e.stopPropagation();
-      var newSide = (Math.abs(rect.left+rect.width - mouseX)+Math.abs(rect.height + rect.top - mouseY))/2;
-      if (newSide>150){
+      // var newSide = (Math.abs(rect.left+rect.width - Math.max(mouseX, icmargin)) +
+      // 		     Math.abs(rect.height + rect.top - Math.max(mouseY, icmargin)))/2;
+      var deltaSide = Math.min(Math.max(rect.left - mouseX, rect.top - mouseY),
+			       Math.min(rect.left, rect.top) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // newSide =  Math.min(Math.min(Math.newSide - rect.width, rect.left-icmargin), Math.newSide - rect.width)
+      if (newSide>5){
         rect.left = rect.left + rect.width - newSide;
         rect.top = rect.height + rect.top - newSide;
         rect.width = rect.height = newSide;
@@ -199,16 +214,23 @@ function mouseMove(e) {
   } else if (dragTR) {
       e.preventDefault();
       e.stopPropagation();
-      var newSide = (Math.abs(mouseX-rect.left)+Math.abs(rect.height + rect.top - mouseY))/2;
-      if (newSide>150){
+      // var newSide = (Math.abs(Math.min(mouseX, imageCanvas.width - icmargin)-rect.left)+
+      // 		     Math.abs(rect.height + rect.top - Math.max(mouseY, icmargin)))/2;
+      var deltaSide = Math.min(Math.max(mouseX - (rect.left+rect.width), rect.top - mouseY),
+			       Math.min(imageCanvas.width-(rect.left+rect.width), rect.top) - icmargin);
+      var newSide = rect.width + deltaSide;
+      if (newSide>5){
           rect.top = rect.height + rect.top - newSide;
           rect.width = rect.height = newSide;
       }
   } else if (dragBL) {
       e.preventDefault();
       e.stopPropagation();
-      var newSide = (Math.abs(rect.left+rect.width - mouseX)+Math.abs(rect.top - mouseY))/2;
-      if (newSide>150)
+      var deltaSide = Math.min(Math.max(rect.left - mouseX, mouseY - (rect.top+rect.height)),
+			       Math.min(rect.left, imageCanvas.height - (rect.top+rect.height)) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // var newSide = (Math.abs(rect.left+rect.width - mouseX)+Math.abs(rect.top - mouseY))/2;
+      if (newSide>5)
       {
         rect.left = rect.left + rect.width - newSide;
         rect.width = rect.height = newSide;
@@ -216,8 +238,11 @@ function mouseMove(e) {
   } else if (dragBR) {
       e.preventDefault();
       e.stopPropagation();
-      var newSide = (Math.abs(rect.left - mouseX)+Math.abs(rect.top - mouseY))/2;
-      if (newSide>150)
+      var deltaSide = Math.min(Math.max(mouseX - (rect.left+rect.width), mouseY - (rect.top+rect.height)),
+			       Math.min(imageCanvas.width-(rect.left+rect.width), imageCanvas.height - (rect.top+rect.height)) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // var newSide = (Math.abs(rect.left - mouseX)+Math.abs(rect.top - mouseY))/2;
+      if (newSide>5)
       {
        rect.width = rect.height = newSide;
       }      
@@ -226,18 +251,18 @@ function mouseMove(e) {
 }
 
 function updateCurrentCanvasRect(){
-  current_canvas_rect.height = imageCanvas.height - icmargin2
-  current_canvas_rect.width = imageCanvas.width - icmargin2
-  current_canvas_rect.top = image.offsetTop + icmargin
-  current_canvas_rect.left = image.offsetLeft + icmargin
+    current_canvas_rect.height = imageCanvas.height - icmargin2*2 + icborder *4;
+    current_canvas_rect.width = imageCanvas.width - icmargin2*2 + icborder *4;
+    current_canvas_rect.top = imageCanvas.offsetTop + icmargin;
+    current_canvas_rect.left = imageCanvas.offsetLeft + icmargin;
 }
 
 function repositionCanvas(){
   //make canvas same as image, which may have changed size and position
   imageCanvas.height = image.height+icmargin2;
   imageCanvas.width = image.width+icmargin2;
-  imageCanvas.style.top = image.offsetTop - icmargin + "px";;
-  imageCanvas.style.left = image.offsetLeft - icmargin + "px";
+  imageCanvas.style.top = image.offsetTop + icborder - icmargin + "px";
+  imageCanvas.style.left = image.offsetLeft + icborder - icmargin + "px";
   //compute ratio comparing the NEW canvas rect with the OLD (current)
   var ratio_w = imageCanvas.width / current_canvas_rect.width;
   var ratio_h = imageCanvas.height / current_canvas_rect.height;
@@ -251,10 +276,10 @@ function repositionCanvas(){
 }
 
 function initCanvas(){
-  imageCanvas.height = image.height+icmargin2;
-  imageCanvas.width = image.width+icmargin2;
-  imageCanvas.style.top = image.offsetTop - icmargin + "px";;
-  imageCanvas.style.left = image.offsetLeft - icmargin + "px";
+  imageCanvas.height = image.height - icborder;
+  imageCanvas.width = image.width - 2*icborder;
+  imageCanvas.style.top = image.offsetTop + icborder + "px";
+  imageCanvas.style.left = image.offsetLeft + icborder + "px";
   updateCurrentCanvasRect();
 }
 
@@ -389,7 +414,7 @@ function loadSpectra(filePath) {
 
 function toggle_display(){
   el = document.querySelector('.generate');
-  
+   
   if(el.style.display == 'none'){
       el.style.display = 'block'
   }else{
@@ -793,7 +818,7 @@ function initializeChart(wlensArray) {
 	           font: {
 	               size: 16,
 	               weight: "bold"
-	               	           }
+	           }
 	        }
 	      }
 	    },

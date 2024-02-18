@@ -12,7 +12,9 @@ from scipy.io import wavfile
 import time
 
 # other useful modules
+from matplotlib import cm, colors
 import matplotlib.pyplot as plt
+from PIL import Image, ImageOps
 import numpy as np
 import astropy.io.fits as pyfits
 import glob
@@ -43,33 +45,78 @@ def dsamp_ifu(a, dsamp):
     sh = shape[0],host.shape[0]//shape[0],shape[1],host.shape[1]//shape[1], host.shape[-1]
     return host.reshape(sh).mean(-2).mean(1).T
 
-def make_whitelight(data, pc=99., contrast=0.5, outfile="static/images/whitelight.png"):
+def make_whitelight(data, pc=99., contrast=0.5, outfile="static/images/whitelight.png", greyshade=0., bordpix=5, sidelen=390, padding=0):
     wlight = data.sum(axis=0)
+    wlight /= np.percentile(wlight, pc)
     # clip to percentile limit and apply contrast
-    wlight = np.clip(wlight, 0, np.percentile(wlight, pc))**contrast
+    wlight = np.clip(wlight, 0, 1)**contrast
+    cmap = (cm.magma(wlight[::-1,::-1].T)*255).astype('uint8')
+    greyval = int(greyshade*255)
+    
+    wdims = np.array(cmap.shape[:-1])
+    inset_x = inset_y = 0
 
-    wdims = wlight.shape
-    if wdims[0] != wdims[1]:
-        # pad to square
-        wdimord = np.argsort(wdims)
-        hostarr = np.zeros([wdims[wdimord[1]]]*2)
-        margin = (wdims[wdimord[1]] - wdims[wdimord[0]]) // 2
-        # indexing depends on which axis is bigger
-        if np.diff(wdimord)[0]:
-            hostarr[:,margin:wdims[1]+margin] = wlight
-        else:
-            hostarr[margin:wdims[0]+margin,:] = wlight
-        wlight = hostarr
-    plt.imsave(outfile, wlight[::-1,::-1].T, cmap='magma')
+    nmax = wdims.max()
+    sizefac = sidelen / wdims.max()
+    newsize = np.round(np.array(wdims)[::-1] * sizefac / 2).astype(int) * 2
+    pixdiff = np.max(newsize) - newsize
+    pixmarg = pixdiff // 2 + padding
+    print(newsize, tuple(pixdiff), cmap.shape)
+    img = Image.fromarray(cmap, 'RGBA').resize(tuple(newsize), Image.Resampling.NEAREST)
+    img = ImageOps.expand(img,border=tuple(pixmarg),fill='black')
+    img = ImageOps.expand(img,border=bordpix,fill='white')
+    img.save(outfile)
+    return pixmarg
+    
+    # if wdims[0] != wdims[1]:
+    #     # pad to square
+    #     wdimord = np.argsort(wdims)
+    #     hostarr = np.dstack([np.zeros([wdims[wdimord[1]]]*2)]*4)
+    #     hostarr[:,:,:3] = greyval
+    #     hostarr[:,:,-1] = 255
+    #     print(hostarr.shape, cmap.shape)
+    #     margin = (wdims[wdimord[1]] - wdims[wdimord[0]]) // 2
+    #     # indexing depends on which axis is bigger
+    #     if np.diff(wdimord)[0]:
+    #         hostarr[margin:wdims[0]+margin,:,:] = cmap
+    #         inset_x += 2*margin
+    #     else:
+    #         hostarr[:,margin:wdims[1]+margin,:] = cmap
+    #         inset_y += 2*margin
+    #     cmap = hostarr.astype('uint8')
+    #     print(hostarr[:,:,0])
+
+    # print((sidelen) / np.abs(np.diff(wdims)), padding)
+        
+    # if padding:
+    #     final = np.zeros((cmap.shape[0]+2*padding, cmap.shape[1]+2*padding,
+    #                       cmap.shape[2])).astype('uint8')+greyval
+    #     final[:,:,-1] = 255
+    #     final[padding:-padding,padding:-padding,:] = cmap
+    # else:
+    #     final = cmap
+
+        
+    # # plt.imsave(outfile, wlight[::-1,::-1].T, cmap='magma')
+    # img = Image.fromarray(final, 'RGBA').resize((sidelen,sidelen), Image.Resampling.NEAREST)
+    # img = ImageOps.expand(img,border=bordpix,fill='white')
+    # # img.save(outfile)
+
         
 def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     '''Reads datacube. Prepares and writes data for spectra and whitelight
        image into csv files. Creates audio files for each pixel in image.'''
 
+    mgdata = {}
+
+    maxn = 800
+    minspaxside = 4
+    
     # move globals here (L20-34)
     # which channel do we want to use (1,2,3 or 4)?
     ch = 2
 
+    
     acontrast = 1.*1.4
     vcontrast = 0.5
 
@@ -77,11 +124,15 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     system = "mono"
     length = 1.1
 
-    # set uo score object for sonification
+    # set up score object for sonification
     score =  Score(["C3"], length)
     generator = Spectralizer()
     generator.modify_preset({'min_freq':40, 'max_freq':800})
 
+    # viewfinder properties
+    totlen = 400 # pixels
+    bordpix = 5 # pixels
+    fieldsize = totlen-2*bordpix
     
     if not glob.glob(fname):
         print('No such file!')
@@ -114,8 +165,8 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         data = data[lidx:ridx]
         wlens = wlens[lidx:ridx]
 
-        make_whitelight(data, contrast=vcontrast)
-        
+        pixmarg = make_whitelight(data, contrast=vcontrast, bordpix=bordpix, sidelen=fieldsize)
+        print(pixmarg)
         print(data.shape, header['CDELT3'], header['CRVAL3'])
         # plt.plot(data.sum(axis=-1).sum(axis=-1))
         # plt.show()    
@@ -126,7 +177,7 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
     
         r_cen = np.asarray(maxpos[::-1])
         #r_cen = (data.shape[1]//2, data.shape[2]//2)
-        print(r_cen)
+        # print(r_cen)
 
         ## Re-centre on selected spatial selection
         #offset_x = int((maxx - minx) / 2) - 12
@@ -137,21 +188,54 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         ap = 12
         #censel = data[:,r_cen[1]-ap:r_cen[1]+ap,r_cen[0]-ap:r_cen[0]+ap]
 
-        x1 = ap - minx
-        x2 = maxx - ap
-        y1 = ap - miny
-        y2 = maxy - ap
-        censel = data[:,r_cen[1]-x1:r_cen[1]+x2,r_cen[0]-y1:r_cen[0]+y2]
+        pcmarg = pixmarg / fieldsize
+        print(pcmarg*100)
+        print(maxx,minx,maxy,miny)
 
+
+        
+        x1  = int(np.round(data.shape[1]*(((100-maxx) - pcmarg[1])/(100. - 2*pcmarg[1]))))
+        x2  = int(np.round(data.shape[1]*(((100-minx) - pcmarg[1])/(100. - 2*pcmarg[1]))))
+        y1  = int(np.round(data.shape[2]*(((100-maxy) - pcmarg[0])/(100. - 2*pcmarg[0]))))
+        y2  = int(np.round(data.shape[2]*(((100-miny) - pcmarg[0])/(100. - 2*pcmarg[0]))))
+
+        # clip to index range
+        x1 = np.clip(x1, 0, data.shape[1])
+        y1 = np.clip(y1, 0, data.shape[2])
+        x2 = np.clip(x2, 0, data.shape[1])
+        y2 = np.clip(y2, 0, data.shape[2])
+
+        xdiff = x2-x1
+        ydiff = y2-y1
+        delta = min(max(max(xdiff, ydiff), minspaxside), min(data.shape[1:]))
+        print(x1,x2,y1,y2,xdiff, ydiff, delta)
+        
+        x1 += int(np.clip(data.shape[1]-x1-delta, -np.inf, 0))
+        y1 += int(np.clip(data.shape[2]-y1-delta, -np.inf, 0))
+        x2 = int(x1+delta)
+        y2 = int(y1+delta)
+        
+        print(x1,x2,y1,y2)
+        # x1 = ap - minx
+        # x2 = maxx - ap
+        # y1 = ap - miny
+        # y2 = maxy - ap
+        # censel = data[:,r_cen[1]-x1:r_cen[1]+x2,r_cen[0]-y1:r_cen[0]+y2]
+        # exit()
+        censel = data[:,x1:x2,y1:y2]
+        numpix = (x2-x1) * (y2-y1)
+        dfac = -int(-np.sqrt(numpix) // np.sqrt(maxn))
+        
+        censel = dsamp_ifu(censel,dfac)
         #censel = data[:, 3:-3, :]
-        print(censel)
+        # print(censel)
         censel = np.rot90(censel, k =3, axes=(1,2))
-        print(censel)
+        # print(censel)
         # plt.imshow(np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast)
         vols = np.clip(censel.sum(0), 0, np.percentile(censel.sum(0), 99))**vcontrast
         vols[np.isnan(vols)] = 0
         vols /= vols.max()
-        print(vols)
+        # print(vols)
         # plt.show()
         nsamp = int(48000 * 0.1 // 1)
         fade = np.linspace(0.,1.,nsamp)
@@ -164,7 +248,8 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         plt.figure(figsize=(16,16))
 
         spec = np.zeros((wlens.size, censel.shape[1]*censel.shape[2]))
-    
+        print(spec.shape, censel.shape)
+        
         for i in range(censel.shape[1]):
             for j in range(censel.shape[2]):
                 # plt.subplot2grid((ap*2,ap*2), (i,j))
@@ -174,22 +259,27 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
                 consub = censel[:,i,j]-np.percentile(censel[:,i,j], 50)
                 consub[consub < consub.max()*0.18] = 0.#0.15
                 # consub[consub < 0] = 0.
+                pixcol.append(plt.cm.magma(vols[i,j])[:-1])
                 pars = {'spectrum':[consub[::-1]**acontrast], 'pitch':[1]}
+                maxval = np.max(pars['spectrum'][0])
                 # pars = {'spectrum':[(consub[::-1] == consub[::-1].max()).astype(float)], 'pitch':[1]}
-                spec[:, i*censel.shape[1]+j] = pars['spectrum'][0][::-1]
+                spec[:, i*censel.shape[2]+j] = pars['spectrum'][0][::-1]
+                # if not maxval:
+                #     continue
                 sources = Objects(pars.keys())
                 sources.fromdict(pars)
                 sources.apply_mapping_functions()
                 soni = Sonification(score, sources, generator, system)
+
                 soni.render()
-                print(vols[i,j])
+                # print(vols[i,j])
                 soni.save(f'static/audio/snd_{i}_{j}.wav', master_volume=vols[i,j]**1.3)
-                pixcol.append(plt.cm.magma(vols[i,j])[:-1])
+
                 # plt.plot(wlens, consub)
                 wave = wav.read(f'static/audio/snd_{i}_{j}.wav')
                 if i ==150 and j == 150:
                     plt.close()
-                    print(list(pars['spectrum'][0]))
+                    # print(list(pars['spectrum'][0]))
                     plt.plot(pars['spectrum'][0])
                     plt.show()
                 cwave = np.array(wave.data[:-nsamp], dtype='float64')[:,0]
@@ -222,7 +312,8 @@ def make_grid(fname, minwl=None, maxwl=None, minx=0, maxx=24, miny=0, maxy=24):
         # plt.plot(wlens,data.mean(-1).mean(-1))
 
         # plt.xlabel(header['CUNIT3'])
-
+        return mgdata
+        
 if __name__ == "__main__":
     #fname = f'DataCubes/NGC7319_nucleus_MIRI_MRS/JWST/*ch{ch}*/*.fits'
     #fname = f'DataCubes/J1316+1753_240222.fits'
