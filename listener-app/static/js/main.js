@@ -6,10 +6,14 @@ let pixCols;
 let specWlens;
 let specVals;
 let specChart;
-var canvas = document.getElementById('mycanvas');
+let intspecWlens;
+let intspecVals;
+let intspecChart;
+var canvas = document.getElementById('mainCanvas');
 var ctx = canvas.getContext('2d');
 
-var panelsize = 16;
+
+var panelsize = ppix;
 var npanel =  nside;
 var fadetime = 0.03;
 var prefadetime = 0.03;
@@ -26,11 +30,307 @@ var w = 0;
 var curdx = -1;
 var idx = 0;
 
+// Next ~250 lines are for spatial selection in the Viewfinder
+//hidden or text inputs for transparent canvas
+var image = document.getElementById('fullDatacube');
+var imagecanvas = document.getElementById('imageCanvas')
+var h_th_left = document.getElementById('thb_left')
+var h_th_top = document.getElementById('thb_top')
+var h_th_right = document.getElementById('thb_right')
+var h_th_bottom = document.getElementById('thb_bottom')
+
+var handleRadius = 5
+
+var dragTL = dragBL = dragTR = dragBR = false;
+var dragWholeRect = false;
+
+var rect={}
+var current_canvas_rect={}
+
+var mouseX, mouseY
+var startX, startY
+
+// The margin size around the image - gives space for rect + handles
+var icmargin = 5;
+var icmargin2 = icmargin * 2;
+var icborder = 0;
+
+var th_left = 0;
+var th_top = 0;
+var th_right = 100;
+var th_bottom = 100.;
+
+var th_width = th_right - th_left;
+var th_height = th_bottom - th_top;
+
+var effective_image_width = 100.;
+var effective_image_height = 100.;
+
+//drawRectInCanvas() connected functions -- START
+function updateHiddenInputs(){
+  var inverse_ratio_w =  effective_image_width / imageCanvas.width;
+  var inverse_ratio_h = effective_image_height / imageCanvas.height;
+  h_th_left.value = Math.round(Math.max(rect.left-icmargin,0) * inverse_ratio_w)
+  h_th_top.value = Math.round(Math.max(rect.top-icmargin,0) * inverse_ratio_h)
+  h_th_right.value = Math.round((rect.left + rect.width + icmargin) * inverse_ratio_w)
+  h_th_bottom.value = Math.round((rect.top + rect.height + icmargin) * inverse_ratio_h)
+}
+
+function drawCircle(x, y, radius) {
+  var ictx = imageCanvas.getContext("2d");
+  ictx.fillStyle = "#ffe657";
+  ictx.beginPath();
+  ictx.arc(x, y, radius, 0, 2 * Math.PI);
+  ictx.fill();
+}
+
+function drawSquare(x,y, side) {
+  var ictx = imageCanvas.getContext("2d");
+  ictx.fillStyle = "#4CBB17";
+  ictx.fillRect(x,y,side,side);
+}
+
+function drawHandles() {
+  drawSquare(rect.left-handleRadius, rect.top-handleRadius, handleRadius);
+  drawSquare(rect.left + rect.width, rect.top-handleRadius, handleRadius);
+  drawSquare(rect.left + rect.width, rect.top + rect.height, handleRadius);
+  drawSquare(rect.left-handleRadius, rect.top + rect.height, handleRadius);
+}
+
+function drawRectInCanvas()
+{
+  var ictx = imageCanvas.getContext("2d");
+  ictx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+  ictx.beginPath();
+  ictx.lineWidth = "4";
+  ictx.fillStyle = "rgba(76, 187, 23, 0.1)";
+  ictx.strokeStyle = "#4CBB17";
+  ictx.rect(rect.left, rect.top, rect.width, rect.height);
+  ictx.fill();
+  ictx.stroke();
+  drawHandles();
+  updateHiddenInputs()
+}
+//drawRectInCanvas() connected functions -- END
+
+function mouseUp(e) {
+  dragTL = dragTR = dragBL = dragBR = false;
+  dragWholeRect = false;
+}
+
+//mousedown connected functions -- START
+function checkInRect(x, y, r) {
+  return (x>r.left && x<(r.width+r.left)) && (y>r.top && y<(r.top+r.height));
+}
+
+function checkCloseEnough(p1, p2) {
+  return Math.abs(p1 - p2) < 2*handleRadius;
+}
+
+function getMousePos(imageCanvas, evt) {
+  var clx, cly
+  if (evt.type == "touchstart" || evt.type == "touchmove") {
+    clx = evt.touches[0].clientX;
+    cly = evt.touches[0].clientY;
+  } else {
+    clx = evt.clientX;
+    cly = evt.clientY;
+  }
+  var boundingRect = imageCanvas.getBoundingClientRect();
+  return {
+    x: clx - boundingRect.left,
+    y: cly - boundingRect.top
+  };
+}
+
+function mouseDown(e) {
+  var pos = getMousePos(this,e);
+  mouseX = pos.x;
+  mouseY = pos.y;
+  // 0. inside movable rectangle
+  if (checkInRect(mouseX, mouseY, rect)){
+      dragWholeRect=true;
+      startX = mouseX;
+      startY = mouseY;
+  }
+  // 1. top left
+  else if (checkCloseEnough(mouseX, rect.left) && checkCloseEnough(mouseY, rect.top)) {
+      dragTL = true;
+  }
+  // 2. top right
+  else if (checkCloseEnough(mouseX, rect.left + rect.width) && checkCloseEnough(mouseY, rect.top)) {
+      dragTR = true;
+  }
+  // 3. bottom left
+  else if (checkCloseEnough(mouseX, rect.left) && checkCloseEnough(mouseY, rect.top + rect.height)) {
+      dragBL = true;
+  }
+  // 4. bottom right
+  else if (checkCloseEnough(mouseX, rect.left + rect.width) && checkCloseEnough(mouseY, rect.top + rect.height)) {
+      dragBR = true;
+  }
+  // (5.) none of them
+  else {
+      // handle not resizing
+  }
+  drawRectInCanvas();
+}
+//mousedown connected functions -- END
+
+function mouseMove(e) {    
+  var pos = getMousePos(this,e);
+  // mouseX = Math.min(Math.max(pos.x, imageCanvas.width-icmargin), icmargin);
+  // mouseY = Math.min(Math.max(pos.y, imageCanvas.height-icmargin), icmargin);
+  mouseX = pos.x;
+  mouseY = pos.y;    
+  //console.log(`X: ${mouseX} | Y: ${mouseY}`);  
+  if (dragWholeRect) {
+      e.preventDefault();
+      e.stopPropagation();
+      dx = mouseX - startX;
+      dy = mouseY - startY;
+      if ((rect.left+dx)>icmargin && (rect.left+dx+rect.width+icmargin)<imageCanvas.width){
+        rect.left += dx;
+      }
+      if ((rect.top+dy)>icmargin && (rect.top+dy+rect.height+icmargin)<imageCanvas.height){
+        rect.top += dy;
+      }
+      startX = mouseX;
+      startY = mouseY;
+  } else if (dragTL) {
+      e.preventDefault();
+      e.stopPropagation();
+      // var newSide = (Math.abs(rect.left+rect.width - Math.max(mouseX, icmargin)) +
+      // 		     Math.abs(rect.height + rect.top - Math.max(mouseY, icmargin)))/2;
+      var deltaSide = Math.min(Math.max(rect.left - mouseX, rect.top - mouseY),
+			       Math.min(rect.left, rect.top) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // newSide =  Math.min(Math.min(Math.newSide - rect.width, rect.left-icmargin), Math.newSide - rect.width)
+      if (newSide>5){
+        rect.left = rect.left + rect.width - newSide;
+        rect.top = rect.height + rect.top - newSide;
+        rect.width = rect.height = newSide;
+      }
+  } else if (dragTR) {
+      e.preventDefault();
+      e.stopPropagation();
+      // var newSide = (Math.abs(Math.min(mouseX, imageCanvas.width - icmargin)-rect.left)+
+      // 		     Math.abs(rect.height + rect.top - Math.max(mouseY, icmargin)))/2;
+      var deltaSide = Math.min(Math.max(mouseX - (rect.left+rect.width), rect.top - mouseY),
+			       Math.min(imageCanvas.width-(rect.left+rect.width), rect.top) - icmargin);
+      var newSide = rect.width + deltaSide;
+      if (newSide>5){
+          rect.top = rect.height + rect.top - newSide;
+          rect.width = rect.height = newSide;
+      }
+  } else if (dragBL) {
+      e.preventDefault();
+      e.stopPropagation();
+      var deltaSide = Math.min(Math.max(rect.left - mouseX, mouseY - (rect.top+rect.height)),
+			       Math.min(rect.left, imageCanvas.height - (rect.top+rect.height)) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // var newSide = (Math.abs(rect.left+rect.width - mouseX)+Math.abs(rect.top - mouseY))/2;
+      if (newSide>5)
+      {
+        rect.left = rect.left + rect.width - newSide;
+        rect.width = rect.height = newSide;
+      }
+  } else if (dragBR) {
+      e.preventDefault();
+      e.stopPropagation();
+      var deltaSide = Math.min(Math.max(mouseX - (rect.left+rect.width), mouseY - (rect.top+rect.height)),
+			       Math.min(imageCanvas.width-(rect.left+rect.width), imageCanvas.height - (rect.top+rect.height)) - icmargin);
+      var newSide = rect.width + deltaSide;
+      // var newSide = (Math.abs(rect.left - mouseX)+Math.abs(rect.top - mouseY))/2;
+      if (newSide>5)
+      {
+       rect.width = rect.height = newSide;
+      }      
+  }
+  drawRectInCanvas();
+}
+
+function updateCurrentCanvasRect(){
+    current_canvas_rect.height = imageCanvas.height - icmargin2*2 + icborder *4;
+    current_canvas_rect.width = imageCanvas.width - icmargin2*2 + icborder *4;
+    current_canvas_rect.top = imageCanvas.offsetTop + icmargin;
+    current_canvas_rect.left = imageCanvas.offsetLeft + icmargin;
+}
+
+function repositionCanvas(){
+  //make canvas same as image, which may have changed size and position
+  imageCanvas.height = image.height+icmargin2;
+  imageCanvas.width = image.width+icmargin2;
+  imageCanvas.style.top = image.offsetTop + icborder - icmargin + "px";
+  imageCanvas.style.left = image.offsetLeft + icborder - icmargin + "px";
+  //compute ratio comparing the NEW canvas rect with the OLD (current)
+  var ratio_w = imageCanvas.width / current_canvas_rect.width;
+  var ratio_h = imageCanvas.height / current_canvas_rect.height;
+  //update rect coordinates
+  rect.top = rect.top * ratio_h;
+  rect.left = rect.left * ratio_w;
+  rect.height = rect.height * ratio_h;
+  rect.width = rect.width * ratio_w;
+  updateCurrentCanvasRect();
+  drawRectInCanvas();
+}
+
+function initCanvas(){
+  imageCanvas.height = image.height - icborder;
+  imageCanvas.width = image.width - 2*icborder;
+  imageCanvas.style.top = image.offsetTop + icborder + "px";
+  imageCanvas.style.left = image.offsetLeft + icborder + "px";
+  updateCurrentCanvasRect();
+}
+
+function initRect(){
+  var ratio_w = imageCanvas.width / effective_image_width;
+  var ratio_h = imageCanvas.height / effective_image_height;
+  // Align with inset image
+  rect.height = th_height*ratio_h-icmargin2
+  rect.width = th_width*ratio_w-icmargin2
+  rect.top = th_top*ratio_h+icmargin
+  rect.left = th_left*ratio_w+icmargin
+}
+
+function init(){
+  imageCanvas.addEventListener('mousedown', mouseDown, false);
+  imageCanvas.addEventListener('mouseup', mouseUp, false);
+  imageCanvas.addEventListener('mousemove', mouseMove, false);
+  imageCanvas.addEventListener('touchstart', mouseDown);
+  imageCanvas.addEventListener('touchmove', mouseMove);
+  imageCanvas.addEventListener('touchend', mouseUp);
+  initCanvas();
+  initRect();
+  drawRectInCanvas();
+}
+
+window.addEventListener('load',init)
+window.addEventListener('resize',repositionCanvas)
+
+
+//// -------- collapsible block (for Set Parameters) --------
+
+var coll = document.getElementsByClassName("collapsible");
+var i;
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.display === "block") {
+      content.style.display = "none";
+    } else {
+      content.style.display = "block";
+    }
+  });
+} 
+
 var isMouseDown = false;
 var isYAxisLog = false;
 var isDarkMode = false;
 var isContextSetUp = false;
 var useHelperSounds = false;
+var showNewFile = false;
 
 // some colours
 var dmline = "rgb(255,255,0)"
@@ -41,11 +341,57 @@ var lmgrid = "rgb(0,0,0,0.25)"
 var lmfont = "rgb(0,0,0,0.7)"
 var midgry = "rgb(115,115,115)"
 
-const setupContextButton = document.querySelector(".setup-context")
 const switchYAxisButton = document.querySelector(".switch-axis")
+const switchShowNewButton = document.querySelector(".show-new")
 const switchDarkModeButton = document.querySelector(".dark-mode")
 const switchHelperButton = document.querySelector(".helper-switch")
 const oobNotification = document.getElementById("oob-sound")
+
+// Check for dark mode on first loading (or refreshing) the page
+var element = document.body;
+let darkMode = localStorage.getItem("dark-mode");
+if (darkMode === "enabled") {
+  element.classList.toggle("dark-mode");
+  isDarkMode = true;
+  switchDarkModeButton.innerHTML = 'Use Light Mode';
+  console.log("Dark Mode.");
+  var modeline = "rgb(255,255,0)";
+  var modegrid = "rgb(255,255,255,0.25)";
+  var modefont = "rgb(255,255,255,0.7)";
+} else {
+  var modeline = "rgb(0,0,0)";
+  var modegrid = "rgb(0,0,0,0.25)";
+  var modefont = "rgb(0,0,0,0.7)";
+}
+
+// Check for helper sounds on first loading (or refreshing) the page
+let helperSounds = localStorage.getItem("helper-sounds");
+if (helperSounds === "enabled") {
+  useHelperSounds = true;
+  switchHelperButton.innerHTML = 'Turn Off Helper Sounds';
+  console.log("Helper Sounds On.");
+  }
+else {
+  useHelperSounds = false;
+  switchHelperButton.innerHTML = 'Turn On Helper Sounds';
+  console.log("Helper Sounds Off.");
+  }
+  
+// ---------- load integrated spectrum -----------------
+
+function loadSpectrum(filePath) {
+  return new Promise((resolve, reject) => {
+    fetch(filePath)
+      .then(response => response.text())
+      .then(data => {
+          const lines = data.trim().split("\n");
+	  const numbersArray = lines.map(line => line.split(',').map(parseFloat));
+	  resolve(numbersArray);
+      })
+      .catch(error => reject(error));
+  });
+}
+
 
 // ---------- load spectra files -----------------
 
@@ -63,6 +409,18 @@ function loadSpectra(filePath) {
   });
 }
 
+
+// ---------- toggle select new section -----------------
+
+function toggle_display(){
+  el = document.querySelector('.generate');
+   
+  if(el.style.display == 'none'){
+      el.style.display = 'block'
+  }else{
+     el.style.display = 'none'
+  }
+}
 
 //----------- load whitelight data -------------------
 
@@ -85,9 +443,10 @@ function loadWhiteLight(filePath, callback) {
     });
 }
 
-setupContextButton.addEventListener("click", () => {
+//--------- Initiate audio when the listener canvas is clicked -----------
+
+canvas.addEventListener("click", () => {
     if (!isContextSetUp) {
-	useHelperSounds = true;
 	audioContext = new AudioContext();
 	console.log("User Gestured to start Audio Context.");
 	getSoundGrid().then((response) => {
@@ -99,20 +458,24 @@ setupContextButton.addEventListener("click", () => {
     isContextSetUp = true;
 });
 
+
 switchYAxisButton.addEventListener("click", () => {
     if (isYAxisLog){
 	specChart.options.scales.y.type = 'linear';
+	intspecChart.options.scales.y.type = 'linear';
 	isYAxisLog = false;
 	switchYAxisButton.innerHTML = 'Use Log Y Scale';
 	console.log("Y-axis --> Linear scale.");
     }
     else {
 	specChart.options.scales.y.type = 'logarithmic';
+	intspecChart.options.scales.y.type = 'logarithmic';
 	isYAxisLog = true;
 	switchYAxisButton.innerHTML = 'Use Linear Y Scale';
 	console.log("Y-axis --> Log scale.");
     }
     specChart.update();
+    intspecChart.update();
 
 });
 
@@ -120,6 +483,7 @@ switchDarkModeButton.addEventListener("click", () => {
     if (isDarkMode){
         var element = document.body;
         element.classList.toggle("dark-mode");
+        localStorage.setItem("dark-mode", "disabled");
 	isDarkMode = false;
 	switchDarkModeButton.innerHTML = 'Use Dark Mode';
 	
@@ -129,12 +493,18 @@ switchDarkModeButton.addEventListener("click", () => {
 	specChart.options.scales.x.grid.color = lmgrid;
 	specChart.options.scales.y.ticks.color = lmfont;
 	specChart.options.scales.x.ticks.color = lmfont;
+	intspecChart.data.datasets[0].borderColor = lmline;
+	intspecChart.options.scales.y.grid.color = lmgrid;
+	intspecChart.options.scales.x.grid.color = lmgrid;
+	intspecChart.options.scales.y.ticks.color = lmfont;
+	intspecChart.options.scales.x.ticks.color = lmfont;
 	
 	console.log("Light Mode.");
     }
     else {
         var element = document.body;
         element.classList.toggle("dark-mode");
+        localStorage.setItem("dark-mode", "enabled");
 	isDarkMode = true;
 	switchDarkModeButton.innerHTML = 'Use Light Mode';
 
@@ -145,22 +515,31 @@ switchDarkModeButton.addEventListener("click", () => {
 	specChart.options.scales.x.grid.color = dmgrid;
 	specChart.options.scales.y.ticks.color = dmfont;
 	specChart.options.scales.x.ticks.color = dmfont;
+	intspecChart.options.scaleFontColor = dmfont;
+	intspecChart.data.datasets[0].borderColor = dmline;
+	intspecChart.options.scales.y.grid.color = dmgrid;
+	intspecChart.options.scales.x.grid.color = dmgrid;
+	intspecChart.options.scales.y.ticks.color = dmfont;
+	intspecChart.options.scales.x.ticks.color = dmfont;
 
 	console.log("Dark Mode.");
     }
     // update chart
     specChart.update();
+    intspecChart.update();
 
 });
 
 switchHelperButton.addEventListener("click", () => {
     if (useHelperSounds){
-	useHelperSounds = false;
+        useHelperSounds = false;
+        localStorage.setItem("helper-sounds", "disabled");
 	switchHelperButton.innerHTML = 'Turn On Helper Sounds';
 	console.log("Helper Sounds Off.");
     }
     else {
-	useHelperSounds = true;
+        useHelperSounds = true;
+        localStorage.setItem("helper-sounds", "enabled");
 	switchHelperButton.innerHTML = 'Turn Off Helper Sounds';
 	console.log("Helper Sounds On.");
     }
@@ -277,6 +656,15 @@ function updateSound(e) {
   }
 }
 
+//function showCoordinates(e) {
+//  var acanvas = $('#mainCanvas').get(0);
+//  var ctx = acanvas.getContext('2d');
+//  var x = e.pageX - acanvas.offsetLeft;
+//  var y = e.pageY - acanvas.offsetTop;
+//  var str = 'x : ' + x + ', ' + 'y : ' + y;
+//  document.getElementById('ex').innerHTML = str;
+//}
+
 function makeGrid(){
     // ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 20%, 20%)';
     inc = 0;
@@ -301,33 +689,35 @@ loadWhiteLight('static/pixcols.csv', (error, dataArray) => {
     }
 });
 
-const mycanvas = document.getElementById('mycanvas');
-mycanvas.addEventListener('mousedown', playSound);
-mycanvas.addEventListener('mouseup', stopSoundUp);
-mycanvas.addEventListener('mouseleave', stopSoundLeave);
-mycanvas.addEventListener('mousemove', updateSound);
-mycanvas.addEventListener('mouseenter', enterCanvas);
+const mainCanvas = document.getElementById('mainCanvas');
+mainCanvas.addEventListener('mousedown', playSound);
+mainCanvas.addEventListener('mouseup', stopSoundUp);
+mainCanvas.addEventListener('mouseleave', stopSoundLeave);
+mainCanvas.addEventListener('mousemove', updateSound);
+//mainCanvas.addEventListener('mousemove', showCoordinates);
+mainCanvas.addEventListener('mouseenter', enterCanvas);
 
 oobNotification.addEventListener('ended', function() {
     this.currentTime = 0;
     this.play();
 }, false);
 
-var chartcanvas = document.getElementById('myChart');
 
-// Initialize Chart.js
-function initializeChart(wlensArray) {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    const initArray = new Array(wlensArray.length).fill(0);
+// Initialize integrated spectrum Chart.js
+
+var chartcanvas = document.getElementById('integratedChart');
+function intChart(intspecWlens, intspecVals) {
+    const ctx = document.getElementById('integratedChart').getContext('2d');
+//    const initArray = new Array(wlensArray.length).fill(0);
     Chart.defaults.color = midgry;
-    specChart = new Chart(ctx, {
+    intspecChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: wlensArray, // Create labels based on array indices
+            labels: intspecWlens, // Create labels based on array indices
             datasets: [{
-                label: 'Spectral Dimension',
-                data: initArray,
-                borderColor: midgry,
+                label: 'Integrated Spectrum',
+                data: intspecVals,
+                borderColor: modeline,
                 borderWidth: 3,
 		pointStyle: false,
                 fill: false
@@ -353,30 +743,33 @@ function initializeChart(wlensArray) {
 	    scales: {
  		y: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid,
                   },
                   ticks: {
+                        color: modefont,
                         font: {
                                size: 14,
-	                       weight: "bold"
+	                       weight: "bold",
+	                       color: modefont
                          }
                     },
 		    title: {
 			display: true,
 			text: "Peak-normalised Flux",
                         font: {
-                            size: 18,
+                            size: 16,
 	                    weight: "bold"
                         }
  		    },
-		    max: 1,
-		    min: 3e-3,
+//		    max: 1.01,
+//		    min: 3e-3,
 		},
 		x: {
                   grid: {
-                      color: lmgrid,
+                      color: modegrid,
                   },
                     ticks: {
+                        color: modefont,
                         font: {
                                size: 14,
 	                       weight: "bold"
@@ -386,7 +779,92 @@ function initializeChart(wlensArray) {
 			display: true,
 			text: "Wavelength [micron]",
                         font: {
-                            size: 18,
+                            size: 16,
+	                    weight: "bold"
+                        }
+		    }
+		}
+	    }
+        }
+    });
+}
+
+var chartcanvas = document.getElementById('mainChart');
+
+// Initialize Chart.js
+function initializeChart(wlensArray) {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const initArray = new Array(wlensArray.length).fill(0);
+    Chart.defaults.color = midgry;
+    specChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: wlensArray, // Create labels based on array indices
+            datasets: [{
+                label: 'Spectral Dimension',
+                data: initArray,
+                borderColor: modeline,
+                borderWidth: 3,
+		pointStyle: false,
+                fill: false
+            }]
+        },
+        options: {
+	    showLines: false,
+	    showXLabels: 1,
+            plugins: {
+              legend: {
+	        labels: {
+	           font: {
+	               size: 16,
+	               weight: "bold"
+	           }
+	        }
+	      }
+	    },
+	    tension: 0.3,
+	    animation: {
+		duration: 60,
+            },
+	    scales: {
+ 		y: {
+                  grid: {
+                      color: modegrid
+                  },
+                  ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold",
+	                       color: modefont
+                         }
+                    },
+		    title: {
+			display: true,
+			text: "Peak-normalised Flux",
+                        font: {
+                            size: 16,
+	                    weight: "bold"
+                        }
+ 		    },
+		    max: 1.01,
+		    min: 4.5e-4,
+		},
+		x: {
+                  grid: {
+                      color: modegrid
+                  },
+                    ticks: {
+                        font: {
+                               size: 14,
+	                       weight: "bold",
+	                       color: modefont
+                         }
+                    },
+		    title: {
+			display: true,
+			text: "Wavelength [micron]",
+                        font: {
+                            size: 16,
 	                    weight: "bold"
                         }
 		    }
@@ -399,6 +877,21 @@ function initializeChart(wlensArray) {
 
 // function switchYAxisScale():
 
+// Load integrated spectrum
+
+loadSpectrum('static/intspec.csv')
+    .then(intspec => {
+	intspecWlens = intspec.shift();
+	intspecVals = intspec[0];
+	intChart(intspecWlens, intspecVals);
+	console.log(intspecVals);
+	console.log("Spectrum Loaded.");
+    })
+    .catch(error => {
+      console.error('Error reading the file:', error);
+    });
+  
+// Load spectra:
 
 loadSpectra('static/spec.csv')
     .then(spec => {
@@ -410,3 +903,5 @@ loadSpectra('static/spec.csv')
   .catch(error => {
     console.error('Error reading the file:', error);
   });
+  
+

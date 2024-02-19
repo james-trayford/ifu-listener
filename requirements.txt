@@ -4,3 +4,4 @@ matplotlib
 gunicorn
 numpy
 astropy
+flask-wtf
