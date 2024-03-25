@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grid of Audio Files</title>
@@ -14,8 +14,9 @@
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
-   </head>
-  <body>
+</head>
+   
+<body>
     <audio id="in-sound">
       <source src="{{ url_for('static', filename='stock_sounds/in.mp3') }}">
     </audio>
@@ -28,17 +29,16 @@
 
     <div class="wrapper">
       <div class="grid">
-      <h1> Hyperspectral listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss" target="_blank">STRAUSS</a></h1>
+        <h1> Hyperspectral listener :: Powered by <a href="https://www.audiouniverse.org/research/strauss" target="_blank">STRAUSS</a></h1>
       
         <div class="sidebar">
           <p>
-          <!--<button class="setup-context"> Setup Audio Engine</button>-->
           <br /><br /><br />
           <button class="helper-switch"> Turn Off Helper Sounds </button> <br />
           <button class="dark-mode">Use Dark Mode</button> <br />
           <button class="switch-axis"> Use Log Y Scale </button> <br />
           
-          <button  class="show-new" onclick="toggle_display()">Select New</button>
+          <button  class="show-new" onclick="toggle_display();delete_flash(this)">Select New</button>
           <div class="generate" style="display:none">
             <form method="post" enctype="multipart/form-data">
                 {{ form.hidden_tag() }}
@@ -60,8 +60,7 @@
                 {{ form.maxy.label }}
                 {{ form.maxy(style='width: 60px; font-size: 16px;', id="thb_bottom") }}
                 <br /><br />
-                <button type="submit" value="Submit" onclick="$('#loading').show();"
->Generate Audio Files</button> 
+                <button type="submit" value="Submit" onclick="$('#loading').show()"">Generate Audio Files</button> 
                 <br />
             </form>
           </div>
@@ -81,6 +80,8 @@
           </div>
           </p>
         </div>
+
+
         <div class="main">
             <h2>Listener</h2>
             <canvas id='mainCanvas' aria-label="2D image of datacube. Click and hold mouse to hear spectrum for each pixel." role="main">
@@ -88,8 +89,10 @@
             <h3>{{fname}}</h2>
             <canvas id="mainChart" aria-label="Dynamic line chart showing peak-normalised flux as a function of wavelength." role="img"></canvas>
         </div>
+        
+
         <div class="right">
-            <div style="width: 100%; margin: 0 auto;">
+          <div style="width: 100%; margin: 0 auto;">
             <h2>Viewfinder</h2>
             
             <img id="fullDatacube" src="../static/images/whitelight.png"
@@ -101,10 +104,15 @@
             <br /><br /><br />
 
             <canvas id="integratedChart" aria-label="Line chart showing integrated spectrum for datacube: peak-normalised flux as a function of wavelength." role="img"></canvas>
-            </div>
+          </div>
         </div>
+        
+        
       </div>
     </div>
+    
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  </body>
+    <script src="{{ url_for('static', filename='js/viewfinder.js') }}"></script>
+    
+</body>
 </html>
