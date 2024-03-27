@@ -14,6 +14,7 @@ app = Flask(__name__)
 SECRET_KEY = os.urandom(32)
 app.config['SECRET_KEY'] = SECRET_KEY
 
+## Parameters input from webpage
 class UploadForm(FlaskForm):
     file = FileField()
     minwl = FloatField('Minimum Wavelength ', validators=[Optional()])
@@ -36,46 +37,47 @@ def index():
     nside = math.isqrt(nspaxel)
     metadata = {'nside': nside,
                 'ppix': 400//nside}
-
+    errors = False
+    
     ## On 'Generate Audio Files':
-    ##     Check if new file selected, or previous filename has been saved
-    ##     Check wavelength range (if selected) is valid
+    ## Check if new file selected, or previous filename has been saved
+    fn = './static/audio/filename.txt'
     if form.validate_on_submit():
         if not form.file.data:
-            fn = './static/audio/filename.txt'
             if not os.path.isfile(fn):
                 flash('Please select a file to upload!', 'error')
-            elif form.minwl.data and form.maxwl.data and minwl >= maxwl:
-                flash('Selected wavelength range invalid!')
-            elif form.minx.data and form.maxx.data and minx >= maxx:
-                flash('Selected spatial range invalid!')
-            elif form.miny.data and form.maxy.data and miny >= maxy:
-                flash('Selected spatial range invalid!')
-            else: 
+                errors = True
+            else:
                 with open(fn) as f:
                     fname = f.read() 
-                mgdata = make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
         else:
             filename = secure_filename(form.file.data.filename)
             fname = os.path.join(upload_folder, filename)
             form.file.data.save(fname)
-            with open('./static/audio/filename.txt', 'w') as f:
+            with open(fn, 'w') as f:
                 f.write(fname)
-            if form.minwl.data and form.maxwl.data and minwl >= maxwl:
-                flash('Selected wavelength range invalid!')
-            else:    
-                mgdata = make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
+                
+        ## Check wavelength and spatial ranges (if selected) are valid
+        if form.minwl.data and form.maxwl.data and minwl >= maxwl:
+            flash('Selected wavelength range invalid!')
+            errors = True
+        if form.minx.data and form.maxx.data and minx >= maxx:
+            flash('Selected spatial range invalid!')
+            errors = True
+        if form.miny.data and form.maxy.data and miny >= maxy:
+            flash('Selected spatial range invalid!')
+            errors = True
+            
+        ## write audio files, spectra and whitelight data
+        if errors == False: 
+            mgdata = make_grid(fname, minwl, maxwl, minx, maxx, miny, maxy)
 
         ## Pass filename to display below canvas
         if fname.find("/")!=-1:
             fname=fname[fname.rindex("/")+1:]
-        # nspaxel = sum(1 for _ in open('static/pixcols.csv'))
-        # nside = math.isqrt(nspaxel)
-        # metadata = {'nside': nside}
         return redirect(url_for('index', form=form, metadata=metadata, fname=fname))
 
     ## Pass filename to display below canvas
-    fn = './static/audio/filename.txt'
     try:
         with open(fn) as f:
             fname = f.read()
