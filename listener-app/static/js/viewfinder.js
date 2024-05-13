@@ -1,32 +1,59 @@
 // Draggable rectangle over Viewfinder for selection of spatial region
 
 var image = document.getElementById('fullDatacube');
-var imagecanvas = document.getElementById('imageCanvas')
-var h_th_left = document.getElementById('thb_left')
-var h_th_top = document.getElementById('thb_top')
-var h_th_right = document.getElementById('thb_right')
-var h_th_bottom = document.getElementById('thb_bottom')
+var imagecanvas = document.getElementById('imageCanvas');
+var h_th_left = document.getElementById('thb_left');
+var h_th_top = document.getElementById('thb_top');
+var h_th_right = document.getElementById('thb_right');
+var h_th_bottom = document.getElementById('thb_bottom');
 
-var handleRadius = 5
+var handleRadius = 5;
 
 var dragTL = dragBL = dragTR = dragBR = false;
 var dragWholeRect = false;
 
-var rect={}
-var current_canvas_rect={}
+var rect={};
+var current_canvas_rect={};
 
-var mouseX, mouseY
-var startX, startY
+var mouseX, mouseY;
+var startX, startY;
 
 // The margin size around the image - gives space for rect + handles
 var icmargin = 5;
 var icmargin2 = icmargin * 2;
 var icborder = 0;
 
-var th_left = 0;
-var th_top = 0;
-var th_right = 100;
-var th_bottom = 100.;
+//var th_left = 0;
+//var th_top = 0;
+//var th_right = 100;
+//var th_bottom = 100.;
+
+if (!localStorage.thb_left || localStorage.thb_left > 100) {
+  localStorage.thb_left = 0;
+}
+if (!localStorage.thb_top || localStorage.thb_top > 100) {
+  localStorage.thb_top = 0;
+}
+if (!localStorage.thb_right || localStorage.thb_right > 100) {
+  localStorage.thb_right = 100;
+}
+if (!localStorage.thb_bottom || localStorage.thb_bottom > 100) {
+  localStorage.thb_bottom = 100;
+}
+
+//let file_select = document.getElementById("form.file");
+//file_select.onchange = function(){
+//  localStorage.thb_left = 0;
+//  localStorage.thb_top = 0;
+//  localStorage.thb_right = 100;
+//  localStorage.thb_bottom = 100;
+//  drawRectInCanvas();
+//};
+
+var th_left = localStorage.thb_left;
+var th_top = localStorage.thb_top;
+var th_right = localStorage.thb_right;
+var th_bottom = localStorage.thb_bottom;
 
 var th_width = th_right - th_left;
 var th_height = th_bottom - th_top;
@@ -39,10 +66,14 @@ var effective_image_height = 100.;
 function updateHiddenInputs(){
   var inverse_ratio_w =  effective_image_width / imageCanvas.width;
   var inverse_ratio_h = effective_image_height / imageCanvas.height;
-  h_th_left.value = Math.round(Math.max(rect.left-icmargin,0) * inverse_ratio_w)
-  h_th_top.value = Math.round(Math.max(rect.top-icmargin,0) * inverse_ratio_h)
-  h_th_right.value = Math.round((rect.left + rect.width + icmargin) * inverse_ratio_w)
-  h_th_bottom.value = Math.round((rect.top + rect.height + icmargin) * inverse_ratio_h)
+  h_th_left.value = Math.round(Math.max(rect.left-icmargin,0) * inverse_ratio_w);
+  h_th_top.value = Math.round(Math.max(rect.top-icmargin,0) * inverse_ratio_h);
+  h_th_right.value = Math.round((rect.left + rect.width + icmargin) * inverse_ratio_w);
+  h_th_bottom.value = Math.round((rect.top + rect.height + icmargin) * inverse_ratio_h);
+  localStorage.setItem('thb_left', h_th_left.value);
+  localStorage.setItem('thb_top', h_th_top.value);
+  localStorage.setItem('thb_right', h_th_right.value);
+  localStorage.setItem('thb_bottom', h_th_bottom.value);
 }
 
 function drawCircle(x, y, radius) {
@@ -236,10 +267,10 @@ function repositionCanvas(){
   var ratio_w = imageCanvas.width / current_canvas_rect.width;
   var ratio_h = imageCanvas.height / current_canvas_rect.height;
   //update rect coordinates
-  rect.top = rect.top * ratio_h;
-  rect.left = rect.left * ratio_w;
-  rect.height = rect.height * ratio_h;
-  rect.width = rect.width * ratio_w;
+  rect.top = 0+icmargin;
+  rect.left = 0+icmargin;
+  rect.height = image.height;
+  rect.width = image.width;
   updateCurrentCanvasRect();
   drawRectInCanvas();
 }
@@ -274,6 +305,6 @@ function init(){
   drawRectInCanvas();
 }
 
-window.addEventListener('load',init)
-window.addEventListener('resize',repositionCanvas)
+window.addEventListener('load',init);
+window.addEventListener('resize',repositionCanvas);
 

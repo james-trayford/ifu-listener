@@ -56,6 +56,10 @@ def index():
             form.file.data.save(fname)
             with open(fn, 'w') as f:
                 f.write(fname)
+            minx = 0
+            maxx = 100
+            miny = 0
+            maxy = 100
                 
         ## Check wavelength and spatial ranges (if selected) are valid
         if form.minwl.data and form.maxwl.data and minwl >= maxwl:

@@ -38,25 +38,24 @@ var isYAxisLog = false;
 var isDarkMode = false;
 var isContextSetUp = false;
 var useHelperSounds = false;
-var showNewFile = false;
 
 // some colours for dark and light modes
-var dmline = "rgb(255,255,0)"
-var dmgrid = "rgb(255,255,255,0.25)"
-var dmfont = "rgb(255,255,255,0.7)"
-var lmline = "rgb(0,0,0)"
-var lmgrid = "rgb(0,0,0,0.25)"
-var lmfont = "rgb(0,0,0,0.7)"
-var midgry = "rgb(115,115,115)"
+var dmline = "rgb(255,255,0)";
+var dmgrid = "rgb(255,255,255,0.25)";
+var dmfont = "rgb(255,255,255,0.7)";
+var lmline = "rgb(0,0,0)";
+var lmgrid = "rgb(0,0,0,0.25)";
+var lmfont = "rgb(0,0,0,0.7)";
+var midgry = "rgb(115,115,115)";
 
 
 // ------ Setup buttons -------
 
-const switchYAxisButton = document.querySelector(".switch-axis")
-const switchShowNewButton = document.querySelector(".show-new")
-const switchDarkModeButton = document.querySelector(".dark-mode")
-const switchHelperButton = document.querySelector(".helper-switch")
-const oobNotification = document.getElementById("oob-sound")
+const switchYAxisButton = document.querySelector(".switch-axis");
+const switchDarkModeButton = document.querySelector(".dark-mode");
+const switchHelperButton = document.querySelector(".helper-switch");
+const switchResetButton = document.querySelector(".reset-params");
+const oobNotification = document.getElementById("oob-sound");
 
 
 // --- Check for dark mode preference on first loading (or refreshing) the page ---
@@ -186,6 +185,26 @@ switchHelperButton.addEventListener("click", () => {
 });
 
 
+// ----- Reset Parameters to default values -----
+//switchResetButton.addEventListener("click", () => {
+//    var s_left = document.getElementById('thb_left');
+//    s_left.innerHTML = 0;
+//    var s_top = document.getElementById('thb_top');
+//    s_top.innerHTML = 0;
+//    var s_right = document.getElementById('thb_right');
+//    s_right.innerHTML = 100;
+//    var s_bottom = document.getElementById('thb_bottom');
+//    s_bottom.innerHTML = 100;
+//    localStorage.thb_left = 0;
+//    localStorage.thb_top = 0;
+//    localStorage.thb_right = 100;
+//    localStorage.thb_bottom = 100;
+//    var s = document.getElementById('min_wavelength');
+//    s.innerHTML = null;
+//    var s = document.getElementById('max_wavelength');
+//    s.innerHTML = null;
+//});
+
 // ----- Hide/show section for parameters and "Generate Audio Files" button -----
 
 function toggle_display(){
@@ -313,14 +332,14 @@ function updateCurdx(e) {
     curdx = xidx + npanel * yidx;
     specChart.data.datasets[0].data = specVals[curdx];
     specChart.update();
-};
+}
 
 function stopSoundUp(e) {
     if (isMouseDown){
 	gainNodes[idx].gain.setTargetAtTime(minvol, audioContext.currentTime + prefadetime, fadetime);
 	isMouseDown = false;
     }
-};
+}
 
 function stopSoundLeave(e) {
     if (isMouseDown){
@@ -332,7 +351,7 @@ function stopSoundLeave(e) {
     }
     // this can be annoying... disabling for now
     //oobNotification.play();
-};
+}
 
 function enterCanvas(e) {
     if (useHelperSounds) {
