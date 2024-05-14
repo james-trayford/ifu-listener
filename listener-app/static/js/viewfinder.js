@@ -7,7 +7,7 @@ var h_th_top = document.getElementById('thb_top');
 var h_th_right = document.getElementById('thb_right');
 var h_th_bottom = document.getElementById('thb_bottom');
 
-var handleRadius = 5;
+var handleRadius = 10;
 
 var dragTL = dragBL = dragTR = dragBR = false;
 var dragWholeRect = false;
@@ -61,6 +61,7 @@ var th_height = th_bottom - th_top;
 var effective_image_width = 100.;
 var effective_image_height = 100.;
 
+var drag_colours = localStorage.drag_rgb;
 
 //drawRectInCanvas() connected functions -- START
 function updateHiddenInputs(){
@@ -78,7 +79,8 @@ function updateHiddenInputs(){
 
 function drawCircle(x, y, radius) {
   var ictx = imageCanvas.getContext("2d");
-  ictx.fillStyle = "#ffe657";
+  var drag_col = localStorage.getItem("drag_colours");
+  ictx.fillStyle = drag_col;
   ictx.beginPath();
   ictx.arc(x, y, radius, 0, 2 * Math.PI);
   ictx.fill();
@@ -86,7 +88,8 @@ function drawCircle(x, y, radius) {
 
 function drawSquare(x,y, side) {
   var ictx = imageCanvas.getContext("2d");
-  ictx.fillStyle = "#4CBB17";
+  var drag_col = localStorage.getItem("drag_colours");
+  ictx.fillStyle = drag_col;
   ictx.fillRect(x,y,side,side);
 }
 
@@ -100,11 +103,13 @@ function drawHandles() {
 function drawRectInCanvas()
 {
   var ictx = imageCanvas.getContext("2d");
+  var drag_col = localStorage.getItem("drag_colours");
   ictx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
   ictx.beginPath();
   ictx.lineWidth = "4";
   ictx.fillStyle = "rgba(76, 187, 23, 0.1)";
-  ictx.strokeStyle = "#4CBB17";
+  console.log("view: " + drag_col);
+  ictx.strokeStyle = drag_col;
   ictx.rect(rect.left, rect.top, rect.width, rect.height);
   ictx.fill();
   ictx.stroke();

@@ -14,6 +14,7 @@ let intspecVals;
 let intspecChart;
 var canvas = document.getElementById('mainCanvas');
 var ctx = canvas.getContext('2d');
+//var drag_rgb = {r:76,g:187,b:23};
 
 
 var panelsize = ppix;
@@ -22,7 +23,6 @@ var fadetime = 0.03;
 var prefadetime = 0.03;
 var maxvol = 0.9;
 var minvol = 0.;
-
 canvas.width  = panelsize * npanel;
 canvas.height = panelsize * npanel;
 
@@ -242,18 +242,29 @@ function loadWhiteLight(filePath, callback) {
 function makeGrid(){
     // ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 20%, 20%)';
     inc = 0;
+    var drag_rgb = {r:0,g:0,b:0};
     for (var x = npanel*panelsize, i = npanel-1; i >= 0; x-=panelsize, i--) {
 	for (var y = 0, j = 0; j < npanel; y+=panelsize, j++) {	  
 	    [rv,gv,bv] = pixCols[inc];
 	    ctx.fillStyle = `rgb(${rv}, ${gv}, ${bv})`;
 	    w = Math.floor(panelsize);
 	    ctx.fillRect (y, x, w, w);
+	    drag_rgb.r += +rv;
+	    drag_rgb.g += +gv;
+	    drag_rgb.b += +bv;
 
 	    inc++;
 	}
     }
+    // Get inverse of average color (~~ used to floor values)
+    drag_rgb.r = 255 - (~~(drag_rgb.r/inc));
+    drag_rgb.g = 255 - (~~(drag_rgb.g/inc));
+    drag_rgb.b = 255 - (~~(drag_rgb.b/inc));
+    drag_colours = "rgba(" + drag_rgb.r + "," + drag_rgb.g + "," + drag_rgb.b + ", 1.0)";
+    localStorage.setItem("drag_colours", drag_colours);
 }
 
+   
 loadWhiteLight('static/pixcols.csv', (error, dataArray) => {
     if (error) {
       console.error('Error:', error);
