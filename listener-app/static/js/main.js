@@ -305,6 +305,13 @@ function playSound(e) {
     
 }
 
+// ----- Volume slider -----
+let volume = document.getElementById('volume-slider');
+volume.addEventListener("change", function(e) {
+    maxvol = e.currentTarget.value / 100;
+})
+
+
 function updateCurdx(e) {
     //console.log('Update...');
     var canvasRect = canvas.getBoundingClientRect();
